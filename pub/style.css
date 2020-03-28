@@ -1,0 +1,32 @@
+body {
+    background: #1A2B2B;
+    color: white;
+}
+
+.row {
+    margin-top: 80px;
+}
+
+.container-fluid {
+    height: 100%;
+}
+
+#clock {
+    font-family: 'Comforta', cursive;
+    font-size: 36px;
+}
+
+#tempf {
+    font-family: 'Comfortaa', cursive;
+    font-size: 96px;
+}
+
+#date {
+    font-family: 'Comfortaa';
+    font-size: 68px;
+}
+
+.small {
+    font-size: 28px;
+    font-style: italic;
+}
