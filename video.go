@@ -29,7 +29,13 @@ func (vid *VideoPlayer) StartVideo() {
 	var err error
 	var buf []byte
 
-	defer l.WithField("devid", config.Camstr).Trace("entered start vid").Stop(&err)
+	var cstr interface{}
+	cstr = config.Camstr
+	if cstr == "0" {
+		cstr = 0
+	}
+
+	defer l.WithField("devid", cstr).Trace("entered start vid").Stop(&err)
 	if vid.recording {
 		l.Error("camera already recording")
 		return
@@ -93,10 +99,13 @@ func (vid *VideoPlayer) StreamVideo(devstr string) (frames <-chan *gocv.Mat) {
 	go func() {
 		var cam *gocv.VideoCapture
 
-		camstr := GetCamstr("0")
+		camstr := GetCamstr(config.Camstr)
 
 		log.Infof("Opening VideoCapture %s", camstr)
-		cam, err = gocv.OpenVideoCapture(camstr)
+
+		// straight up 0
+		//cam, err = gocv.OpenVideoCapture(camstr)
+		cam, err = gocv.OpenVideoCapture(0)
 		if err != nil {
 			l.Fatal("failed to open video capture device")
 			return

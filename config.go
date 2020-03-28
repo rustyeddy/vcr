@@ -39,7 +39,7 @@ func GetConfig() *Configuration {
 	flag.StringVar(&c.StaticPath, "pub", "./pub", "Application root dir")
 	flag.StringVar(&c.IndexPath, "index", "index.html", "index file")
 	flag.StringVar(&c.Name, "name", "redeye", "Application Name")
-	flag.StringVar(&c.Camstr, "camstr", "/dev/video0", "Camera ID")
+	flag.StringVar(&c.Camstr, "camstr", "0", "Camera ID")
 	flag.StringVar(&c.ConfigFile, "config", "redeye.json", "Config file: redeye.json")
 	flag.StringVar(&c.Loglevel, "loglevel", "info", "default log level is debug")
 	flag.StringVar(&c.VideoAddr, "video-addr", "0.0.0.0:8887", "web address default 0.0.0.0:8887")
