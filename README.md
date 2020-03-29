@@ -1,6 +1,7 @@
 # redeye
 
-RedEye Intelligent Camera Software.
+RedEye is a piece of software that can be installed on a computer
+(Raspberry Pi, Linux, Mac, 
 
 ## What Works
 

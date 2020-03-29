@@ -103,13 +103,12 @@ func (vid *VideoPlayer) StreamVideo(devstr string) (frames <-chan *gocv.Mat) {
 	go func() {
 		var cam *gocv.VideoCapture
 
-		camstr := GetCamstr(config.Camstr)
-
+		camstr := GetCamstr("nano")
 		log.Infof("Opening VideoCapture %s", camstr)
 
 		// straight up 0
-		//cam, err = gocv.OpenVideoCapture(camstr)
-		cam, err = gocv.OpenVideoCapture(0)
+		cam, err = gocv.OpenVideoCapture(camstr)
+		//cam, err = gocv.OpenVideoCapture(0)
 		if err != nil {
 			l.Fatal("failed to open video capture device")
 			return

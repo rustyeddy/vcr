@@ -9,6 +9,7 @@ var camstrmap map[string]string
 func init() {
 	camstrmap = map[string]string{
 		"jetson":  jetsonCamstr(),
+		"nano":  jetsonCamstr(),
 		"rpi":     "0",
 		"mac":     "0",
 		"default": "0",
