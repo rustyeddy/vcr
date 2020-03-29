@@ -11,19 +11,24 @@ means a work in progress.
 *** TODO Jetson Nano with CSI Cam
 *** TODO Rasberry Pi Zero with Wireless
 
+
 ** TODO Controls
 *** TODO Play and Pause
 **** DONE MQTT
      CLOSED: [2020-03-29 Sun 06:57]
-**** TODO Websocket
+**** DONE Websocket
+     CLOSED: [2020-03-29 Sun 07:10]
 **** TODO REST
 
 
 ** TODO Configuration
 *** TODO Get Configuration
-**** TODO REST
+**** DONE REST
+     CLOSED: [2020-03-29 Sun 07:10]
 **** TODO Websocket
 *** TODO Set Configuration
+**** TODO REST
+**** TODO Websocket
 
 
 ** BUGS
