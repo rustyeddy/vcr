@@ -31,11 +31,11 @@ type Configuration struct {
 	MQTT string `json:"mqtt"`
 }
 
+// GetConfig returns the one true Configuration with defaults set and command line
+// flags ready to fly.
 func GetConfig() *Configuration {
 	var c Configuration
 	flag.StringVar(&c.Addr, "address", "0.0.0.0:8888", "web address default 0.0.0.0:8888")
-
-	//flag.StringVar(&c.MQTT, "mqtt", "tcp://10.24.10.10:1883/camera/control", "mqtt broker id")
 	flag.StringVar(&c.MQTT, "mqtt", "tcp://10.24.10.10:1883", "mqtt broker address def tcp://10.24.10.10:1883")
 	flag.StringVar(&c.StaticPath, "pub", "./pub", "Application root dir")
 	flag.StringVar(&c.IndexPath, "index", "index.html", "index file")
@@ -55,6 +55,14 @@ func GetConfig() *Configuration {
 	return &c
 }
 
-func ConfigRead(name string, c *Configuration) {
-	log.Error("TODO: Write the configuration file")
+// ReadConfig reads the Configuration from a file.
+func ReadConfig(name string) (c *Configuration) {
+	log.Fatal("TODO: Write the configuration file")
+
+	return c
+}
+
+// SaveConfig file will save the Configuration in a file.
+func SaveConfig(name string, c *Configuration) {
+	log.Fatal("TODO: Read the configuration file")
 }
