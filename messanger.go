@@ -3,6 +3,7 @@ package main
 import (
 	"sync"
 	"time"
+	"fmt"
 
 	"github.com/apex/log"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -56,11 +57,14 @@ var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 		"message": payload,
 	}).Info("MQTT incoming message.")
 
+	fmt.Println("messanger ..")
+
 	switch topic {
 	case "/camera/control":
 		switch payload {
 
 		case "on":
+			fmt.Println("starting video ..")
 			go video.StartVideo()
 			break
 
