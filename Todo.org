@@ -7,7 +7,8 @@ means a work in progress.
 
 *** DONE Linux with USB Cam 
     CLOSED: [2020-03-29 Sun 06:53]
-*** TODO Raspberry Pi 3+4 with CSI Cam
+*** DONE Raspberry Pi 3+4 with CSI Cam
+    CLOSED: [2020-03-29 Sun 07:58]
 *** TODO Jetson Nano with CSI Cam
 *** TODO Rasberry Pi Zero with Wireless
 
