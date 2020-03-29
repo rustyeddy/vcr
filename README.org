@@ -1,0 +1,30 @@
+* RedEye - Intelligent Video Network (IVN)
+
+All '+' signs represent working items. '-' means the are todo and '*'
+means a work in progress.
+
+** TODO Stream M-JPEG
+
+*** DONE Linux with USB Cam 
+    CLOSED: [2020-03-29 Sun 06:53]
+*** TODO Raspberry Pi 3+4 with CSI Cam
+*** TODO Jetson Nano with CSI Cam
+*** TODO Rasberry Pi Zero with Wireless
+
+** TODO Controls
+*** TODO Play and Pause
+**** DONE MQTT
+     CLOSED: [2020-03-29 Sun 06:57]
+**** TODO Websocket
+**** TODO REST
+
+
+** TODO Configuration
+*** TODO Get Configuration
+**** TODO REST
+**** TODO Websocket
+*** TODO Set Configuration
+
+
+** BUGS
+
