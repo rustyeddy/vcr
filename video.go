@@ -29,6 +29,9 @@ func (vid *VideoPlayer) StartVideo() {
 	var err error
 	var buf []byte
 
+	l.Info("StartVideo Entered ... ")
+	defer l.Info("StartVideo Finished")
+
 	var cstr interface{}
 	cstr = config.Camstr
 	if cstr == "0" {
@@ -62,6 +65,7 @@ func (vid *VideoPlayer) StartVideo() {
 		}
 		vid.Stream.UpdateJPEG(buf)
 	}
+	l.Info("")
 }
 
 // StopVideo shuts the sensor down and turns

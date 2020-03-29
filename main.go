@@ -66,7 +66,10 @@ func main() {
 }
 
 func startupInfo() {
-	log.Infof("config %+v\n", config)
+	if !config.Debug {
+		return
+	}
+	log.Infof("config %v\n", config)
 
 	hname, _ := os.Hostname()
 	l.WithFields(log.Fields{
