@@ -1,36 +1,42 @@
 package main
 
 import (
-	"fmt"
 	"sync"
 
 	"gocv.io/x/gocv"
 )
 
+// VideoPipeline is a series of pipes that accepts and image
+// processes it and spits the processed image out the other end
+type VideoPipeline interface {
+	Send(*gocv.Mat) *gocv.Mat
+}
+
 // FrameDrain listens to a channel delivering video camera images,
 // typically to observe something and perhaps perform some
 // transformation.
-type FrameQ struct {
-	Name    string
+type VideoPipe struct {
 	Q       chan *gocv.Mat // recieving data
+
+	Name    string
 	Process func(img *gocv.Mat)
-	Next    *FrameQ
+	Next    VideoPipeline
 }
 
-// NewFrameQ will create a new image Q to recieve upstream
+// NewVideoPipe will create a new image Q to recieve upstream
 // images, if the Process method is not nil, then the frame will
 // go through the corresponding processing.
-func NewFrameQ(name string, proc func(img *gocv.Mat)) (fw *FrameQ) {
-	fw = &FrameQ{
+func NewVideoPipe(name string, pipe VideoPipeline) (fw *VideoPipe) {
+	fw = &VideoPipe{
 		Name:    name,
 		Q:       make(chan *gocv.Mat), // no buffers for now
-		Process: proc,
+		Next: pipe,
 	}
 	return fw
 }
 
 // Listen for incoming images and send them to the frame pipeline
-func (fq *FrameQ) Listen(done <-chan bool, wg *sync.WaitGroup) {
+func (fq *VideoPipe) Listen(done <-chan bool, wg *sync.WaitGroup) {
 	defer wg.Done()
 	l.WithField("Name", fq.Name).Info("begin listen loop")
 
@@ -55,7 +61,8 @@ func (fq *FrameQ) Listen(done <-chan bool, wg *sync.WaitGroup) {
 
 // Send and Frame to the existing q, then if next exists, send it to the next.
 // next will need to turn into a queue .. (hmm a channel of channels?)
-func (fq *FrameQ) Send(img *gocv.Mat, next *FrameQ) {
-	fmt.Println("sending")
+func (fq *VideoPipe) Send(img *gocv.Mat) *gocv.Mat {
+	l.Debug("sending image")
 	fq.Q <- img
+	return img
 }

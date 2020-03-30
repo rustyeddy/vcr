@@ -29,7 +29,7 @@ func NewFaceDetector() (fd *FaceDetector) {
 }
 
 // FaceDetector takes in an image and finds a Face.
-func (fd *FaceDetector) FindFace(img *gocv.Mat) *gocv.Mat {
+func (fd *FaceDetector) Send(img *gocv.Mat) *gocv.Mat {
 
 	// load classifier to recognize faces
 	classifier := gocv.NewCascadeClassifier()

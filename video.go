@@ -12,9 +12,9 @@ import (
 type VideoPlayer struct {
 
 	// Check if we are recording
-	recording     bool // XXX: mutex or channel this bool
-	doAI          bool // TODO
 	*mjpeg.Stream      // Stream will always be available
+	recording     bool // XXX: mutex or channel this bool
+	VideoPipeline 
 }
 
 // NewVideoPlayer will create a new video player with default nil set.
@@ -45,6 +45,7 @@ func (vid *VideoPlayer) StartVideo() {
 	}
 
 	faced := NewFaceDetector()
+	vid.VideoPipeline = faced
 
 	// Both API REST server and MQTT server have started up, we are
 	// now waiting for requests to come in and instruct us wat to do.
@@ -53,9 +54,14 @@ func (vid *VideoPlayer) StartVideo() {
 		// Here we run through the AI, or whatever filter chain we are going
 		// to use. For now it is hard coded with face detect, this will become
 		// more flexible by allowing serial and concurrent filters.
-		if vid.doAI {
-			faced.FindFace(img)
+		
+		//if vid.doAI {
+		//	faced.FindFace(img)
+		//}
+		if vid.VideoPipeline != nil {
+			vid.VideoPipeline.Send(img)
 		}
+
 
 		// TODO: replace following when GoCV is not available.
 		// Finalize the annotated image. XXX maybe we create a write channel?
@@ -107,8 +113,8 @@ func (vid *VideoPlayer) StreamVideo(devstr string) (frames <-chan *gocv.Mat) {
 		log.Infof("Opening VideoCapture %s", camstr)
 
 		// straight up 0
-		cam, err = gocv.OpenVideoCapture(camstr)
-		//cam, err = gocv.OpenVideoCapture(0)
+		//cam, err = gocv.OpenVideoCapture(camstr)
+		cam, err = gocv.OpenVideoCapture(0)
 		if err != nil {
 			l.Fatal("failed to open video capture device")
 			return
