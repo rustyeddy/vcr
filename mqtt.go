@@ -77,6 +77,20 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 		case "off":
 			video.StopVideo()
 			break
+
+		case "ai":
+			if video.VideoPipeline == nil {
+				video.VideoPipeline = GetPipeline("face")
+			} else {
+				// Do we need to stop something .?.
+				video.VideoPipeline = nil
+			}
+			// toggle ai
+			// video.
+			break
+
+		default:
+			l.WithField("topic", topic).Error("unknown command")
 		}
 	}
 }

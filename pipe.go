@@ -6,9 +6,20 @@ import (
 	"gocv.io/x/gocv"
 )
 
+// Set up a video pipeline  with a name
+var pipelineMap map[string]VideoPipeline
+
+func init() {
+	pipelineMap = make(map[string]VideoPipeline)
+	pipelineMap["face"] = NewFaceDetector()
+}
+
 // VideoPipeline is a series of pipes that accepts and image
-// processes it and spits the processed image out the other end
+// processes the image, then returns the processed image. That
+// image may then be process by another step in the pipe, which
+// may include writting to a file or
 type VideoPipeline interface {
+	Setup()
 	Send(*gocv.Mat) *gocv.Mat
 }
 
@@ -16,11 +27,11 @@ type VideoPipeline interface {
 // typically to observe something and perhaps perform some
 // transformation.
 type VideoPipe struct {
-	Q       chan *gocv.Mat // recieving data
+	Q chan *gocv.Mat // recieving data
 
 	Name    string
 	Process func(img *gocv.Mat)
-	Next    VideoPipeline
+	Next    VideoPipeline // try using this!!
 }
 
 // NewVideoPipe will create a new image Q to recieve upstream
@@ -28,11 +39,16 @@ type VideoPipe struct {
 // go through the corresponding processing.
 func NewVideoPipe(name string, pipe VideoPipeline) (fw *VideoPipe) {
 	fw = &VideoPipe{
-		Name:    name,
-		Q:       make(chan *gocv.Mat), // no buffers for now
+		Name: name,
+		Q:    make(chan *gocv.Mat), // no buffers for now
 		Next: pipe,
 	}
 	return fw
+}
+
+// Setup run optional setup.
+func Setup() {
+	// This function must exist to fullfill the VideoPipeline contract
 }
 
 // Listen for incoming images and send them to the frame pipeline
@@ -56,6 +72,11 @@ func (fq *VideoPipe) Listen(done <-chan bool, wg *sync.WaitGroup) {
 		if fq.Process != nil {
 			fq.Process(img)
 		}
+
+		// TODO must be tested ...
+		if fq.Next != nil {
+			fq.Next.Send(img)
+		}
 	}
 }
 
@@ -65,4 +86,11 @@ func (fq *VideoPipe) Send(img *gocv.Mat) *gocv.Mat {
 	l.Debug("sending image")
 	fq.Q <- img
 	return img
+}
+
+// GetPipeline will return a VideoPipeline `name` if one exists
+// in the videoPipeline.
+func GetPipeline(name string) VideoPipeline {
+	p, _ := pipelineMap[name]
+	return p
 }

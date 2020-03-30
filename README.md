@@ -1,7 +1,7 @@
 # redeye
 
-RedEye is a piece of software that can be installed on a computer
-(Raspberry Pi, Linux, Mac, 
+RedEye is *smart* camera software built with Open Computer Vision
+(OpenCV) and with _simple control and configuration_ APIs.
 
 ## What Works
 

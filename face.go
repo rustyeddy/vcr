@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"image"
 	"image/color"
 	"time"
@@ -14,6 +13,7 @@ type FaceDetector struct {
 	Start     *time.Time
 	End       *time.Duration
 	FaceCount int
+	gocv.CascadeClassifier
 }
 
 var (
@@ -28,20 +28,21 @@ func NewFaceDetector() (fd *FaceDetector) {
 	return fd
 }
 
+// Setup the video pipeline, basically read the classifier based on
+// the particular haarscascade code.
+func (fd *FaceDetector) Setup() {
+	// load classifier to recognize faces
+	fd.CascadeClassifier = gocv.NewCascadeClassifier()
+	if !fd.CascadeClassifier.Load(config.XMLFile) {
+		l.WithField("xmlfile", config.XMLFile).Error("Error reading cascade file")
+	}
+}
+
 // FaceDetector takes in an image and finds a Face.
 func (fd *FaceDetector) Send(img *gocv.Mat) *gocv.Mat {
 
-	// load classifier to recognize faces
-	classifier := gocv.NewCascadeClassifier()
-	defer classifier.Close()
-
-	if !classifier.Load(config.XMLFile) {
-		fmt.Printf("Error reading cascade file: %v\n", config.XMLFile)
-		return nil
-	}
-
 	// detect faces
-	rects := classifier.DetectMultiScale(*img)
+	rects := fd.CascadeClassifier.DetectMultiScale(*img)
 	faceDetector.FaceCount = len(rects)
 
 	// draw a rectangle around each face on the original image,
