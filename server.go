@@ -20,17 +20,10 @@ type Server struct {
 	*mux.Router
 }
 
-// NewServer will return a new server.!.
+// NewServer will create the Server struct, fill in the address, create
+// a router, register the route handlers then return
 func NewServer(config *Configuration) (srv *Server) {
 	srv = &Server{}
-	return srv
-}
-
-// StartServer is a meta starter, it starts the HTTP for the SPA and
-// the MJPEG server. TODO: should /mjpeg and index.html be on the same
-// server (port)?
-func (srv *Server) Start(wg *sync.WaitGroup) {
-	defer wg.Done()
 	srv.Router = mux.NewRouter()
 	srv.Server = &http.Server{
 		Handler: srv.Router,
@@ -40,14 +33,30 @@ func (srv *Server) Start(wg *sync.WaitGroup) {
 		ReadTimeout:  15 * time.Second,
 	}
 
-	// ----------------------------------------------
-	srv.Router.HandleFunc("/ws", wsUpgradeHndl)
-	srv.Router.HandleFunc("/api/health", healthCheckHndl)
-	srv.Router.HandleFunc("/api/config", getConfigHndl)
-	srv.Router.HandleFunc("/api/config/{key}/{val}", setConfigValsHndl)
+	// =============================== Add Routes ========================
+	srv.AddRoute("/ws", wsUpgradeHndl)
+	srv.AddRoute("/api/health", healthCheckHndl)
+	srv.AddRoute("/api/config", getConfigHndl)
+	srv.AddRoute("/api/config/{key}/{val}", setConfigValsHndl)
+	srv.AddRoute("/api/record/{onoff}", setRecordHndl)
 
 	// app = spaHandler{StaticPath: "pub", IndexPath: "index.html"}
 	srv.Router.PathPrefix("/").Handler(srv)
+
+	return srv
+}
+
+// AddRoute allows us to dynamically add routes at runtime via a plugin
+func (srv *Server) AddRoute(path string, handlr func(http.ResponseWriter, *http.Request)) {
+	l.WithField("path", path).Info("adding handler")
+	srv.Router.HandleFunc(path, handlr)
+}
+
+// StartServer is a meta starter, it starts the HTTP for the SPA and
+// the MJPEG server. TODO: should /mjpeg and index.html be on the same
+// server (port)?
+func (srv *Server) Start(wg *sync.WaitGroup) {
+	defer wg.Done()
 
 	// Set the route for video
 	vpath := "/mjpeg"
@@ -121,4 +130,12 @@ func getConfigHndl(w http.ResponseWriter, r *http.Request) {
 func setConfigValsHndl(w http.ResponseWriter, r *http.Request) {
 	// Assume we accept a config "json" of replacement strings
 	log.Fatal("TODO config vals")
+}
+
+func setRecordHndl(w http.ResponseWriter, r *http.Request) {
+	// an example API handler
+	if !video.recording {
+		video.StartVideo()
+	}
+	json.NewEncoder(w).Encode(map[string]bool{"ok": true})
 }

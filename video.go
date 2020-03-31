@@ -12,9 +12,11 @@ import (
 type VideoPlayer struct {
 
 	// Check if we are recording
-	*mjpeg.Stream      // Stream will always be available
-	recording     bool // XXX: mutex or channel this bool
+	*mjpeg.Stream // Stream will always be available
 	VideoPipeline
+
+	recording    bool // XXX: mutex or channel this bool
+	pipelineName string
 }
 
 // NewVideoPlayer will create a new video player with default nil set.
@@ -23,9 +25,13 @@ func NewVideoPlayer(config *Configuration) (vid *VideoPlayer) {
 	return vid
 }
 
+// SetPipeline to be a named pipeline
 func (vid *VideoPlayer) SetPipeline(name string) {
-	faced := NewFaceDetector()
-	vid.VideoPipeline = faced
+	if p, e := pipelineMap[name]; !e {
+		return
+	} else {
+		vid.VideoPipeline = p
+	}
 }
 
 // Start Video opens the camera (sensor) and data (vidoe) starts streaming in.
@@ -147,7 +153,7 @@ func (vid *VideoPlayer) StreamVideo(devstr string) (frames <-chan *gocv.Mat) {
 				continue
 			}
 
-			// sent the frame to the frame pipeline
+			// sent the frame to the frame pipeline (should we send by )
 			frameQ <- &img
 		}
 	}()

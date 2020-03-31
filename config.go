@@ -22,13 +22,15 @@ type Configuration struct {
 
 	DisplayVideo bool   `json:"display"`
 	ServeVideo   bool   `json:"video"`
-	FaceDetect   bool   `json:"face-detect"`
-	XMLFile      string `json:"xmlfile"`
 	Output       string `json:"output"`
 
 	Loglevel string
 
 	MQTT string `json:"mqtt"`
+
+	Pipeline   string `json:"pipeline"`
+	FaceDetect bool   `json:"face-detect"`
+	XMLFile    string `json:"xmlfile"`
 }
 
 // GetConfig returns the one true Configuration with defaults set and command line
@@ -43,8 +45,8 @@ func GetConfig() *Configuration {
 	flag.StringVar(&c.Camstr, "camstr", "0", "Camera ID")
 	flag.StringVar(&c.ConfigFile, "config", "redeye.json", "Config file: redeye.json")
 	flag.StringVar(&c.Loglevel, "loglevel", "info", "default log level is debug")
-
 	flag.StringVar(&c.VideoAddr, "video-addr", "0.0.0.0:8887", "web address default 0.0.0.0:8887")
+	flag.StringVar(&c.Pipeline, "pipeline", "face", "Face detect")
 
 	flag.BoolVar(&c.ServeVideo, "serve-video", true, "display video on local screen if available")
 	flag.BoolVar(&c.DisplayVideo, "display-video", true, "display video on local screen if available")
