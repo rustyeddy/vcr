@@ -11,12 +11,13 @@ import (
 // by OpenCV are supported. A version
 type VideoPlayer struct {
 
-	// Check if we are recording
-	*mjpeg.Stream // Stream will always be available
-	VideoPipeline
+	// Video stream and a bool if we are recording
+	*mjpeg.Stream `json:"-"` // Stream will always be available
+	Recording     bool       `json:"recording"` // XXX: mutex or channel this bool
 
-	recording    bool // XXX: mutex or channel this bool
-	pipelineName string
+	// VideoPipeline filtering video. If nil, we have no filter or pipeline.
+	VideoPipeline `json:"-"`
+	PipelineName  string `json:"pipeline"`
 }
 
 // NewVideoPlayer will create a new video player with default nil set.
@@ -27,6 +28,7 @@ func NewVideoPlayer(config *Configuration) (vid *VideoPlayer) {
 
 // SetPipeline to be a named pipeline
 func (vid *VideoPlayer) SetPipeline(name string) {
+	vid.PipelineName = name
 	if p, e := pipelineMap[name]; !e {
 		return
 	} else {
@@ -50,7 +52,7 @@ func (vid *VideoPlayer) StartVideo() {
 	}
 
 	defer l.WithField("devid", cstr).Trace("entered start vid").Stop(&err)
-	if vid.recording {
+	if vid.Recording {
 		l.Error("camera already recording")
 		return
 	}
@@ -87,11 +89,11 @@ func (vid *VideoPlayer) StartVideo() {
 func (vid *VideoPlayer) StopVideo() {
 	defer l.WithFields(log.Fields{
 		"cameraid":  config.Camstr,
-		"recording": vid.recording,
+		"recording": vid.Recording,
 	}).Trace("Stop StreamVideo").Stop(nil)
 
 	// Need to sync around this recording video (or can we use a channel)
-	vid.recording = false
+	vid.Recording = false
 }
 
 // StreamVideo takes a device string, starts the video stream and
@@ -100,7 +102,7 @@ func (vid *VideoPlayer) StreamVideo(devstr string) (frames <-chan *gocv.Mat) {
 	var err error
 
 	// Do not try to restart the video when it is already running.
-	if vid.recording {
+	if vid.Recording {
 		l.Error("camera already recording")
 		return nil
 	}
@@ -110,7 +112,7 @@ func (vid *VideoPlayer) StreamVideo(devstr string) (frames <-chan *gocv.Mat) {
 
 	defer l.WithFields(log.Fields{
 		"camera":    devstr,
-		"recording": vid.recording,
+		"recording": vid.Recording,
 	}).Trace("StreamVideo").Stop(&err)
 
 	// go function opens the webcam and starts reading from device, coping frames
@@ -139,13 +141,13 @@ func (vid *VideoPlayer) StreamVideo(devstr string) (frames <-chan *gocv.Mat) {
 		// them into the image pipeline. We may recieve a REST or MQTT request
 		// to stop recording, in that case the vid.recording will be set to
 		// false and the recording will stop.
-		vid.recording = true
-		for vid.recording {
+		vid.Recording = true
+		for vid.Recording {
 
 			// read a single raw image from the cam.
 			if ok := cam.Read(&img); !ok {
 				l.Info("device closed, turn recording off")
-				vid.recording = false
+				vid.Recording = false
 			}
 
 			// if the image is empty, there will be no sense continueing

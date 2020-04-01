@@ -134,7 +134,7 @@ func setConfigValsHndl(w http.ResponseWriter, r *http.Request) {
 
 func setRecordHndl(w http.ResponseWriter, r *http.Request) {
 	// an example API handler
-	if !video.recording {
+	if !video.Recording {
 		video.StartVideo()
 	}
 	json.NewEncoder(w).Encode(map[string]bool{"ok": true})
