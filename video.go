@@ -30,6 +30,7 @@ func NewVideoPlayer(config *Configuration) (vid *VideoPlayer) {
 func (vid *VideoPlayer) SetPipeline(name string) {
 	vid.PipelineName = name
 	if p, e := pipelineMap[name]; !e {
+		l.WithField("pipeline", name).Error("does not exist")
 		return
 	} else {
 		vid.VideoPipeline = p
@@ -57,6 +58,8 @@ func (vid *VideoPlayer) StartVideo() {
 		return
 	}
 
+	// Video pipeline are named. Setting them is as simple as passing
+	// in the name.
 	vid.SetPipeline("face")
 
 	// Both API REST server and MQTT server have started up, we are

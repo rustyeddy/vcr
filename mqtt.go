@@ -10,6 +10,7 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
+// Messanger handles messages and video channels
 type Messanger struct {
 	Broker         string // MQTT Broker
 	ControlChannel string
