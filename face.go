@@ -31,11 +31,18 @@ func NewFaceDetector() (fd *FaceDetector) {
 // Setup the video pipeline, basically read the classifier based on
 // the particular haarscascade code.
 func (fd *FaceDetector) Setup() {
+	fd.LoadClassifier(config.XMLFile)
+}
+
+// LoadClassier accept the filename of a HaarCascade .xml file
+func (fd *FaceDetector) LoadClassifier(fname string) {
+
 	// load classifier to recognize faces
 	fd.CascadeClassifier = gocv.NewCascadeClassifier()
-	if !fd.CascadeClassifier.Load(config.XMLFile) {
-		l.WithField("xmlfile", config.XMLFile).Error("Error reading cascade file")
+	if !fd.CascadeClassifier.Load(fname) {
+		l.WithField("xmlfile", fname).Error("Error reading cascade file")
 	}
+	l.WithField("xmlfile", fname).Info("Cascade file loaded")
 }
 
 // FaceDetector takes in an image and finds a Face.

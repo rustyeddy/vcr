@@ -28,13 +28,18 @@ func NewVideoPlayer(config *Configuration) (vid *VideoPlayer) {
 
 // SetPipeline to be a named pipeline
 func (vid *VideoPlayer) SetPipeline(name string) {
+	var p VideoPipeline
+	var e bool
+
 	vid.PipelineName = name
-	if p, e := pipelineMap[name]; !e {
+	if p, e = pipelineMap[name]; !e {
 		l.WithField("pipeline", name).Error("does not exist")
 		return
-	} else {
-		vid.VideoPipeline = p
 	}
+
+	// Allow the pipeline to initialize itself getting ready for video
+	p.Setup()
+	vid.VideoPipeline = p
 }
 
 // Start Video opens the camera (sensor) and data (vidoe) starts streaming in.
@@ -123,7 +128,7 @@ func (vid *VideoPlayer) StreamVideo(devstr string) (frames <-chan *gocv.Mat) {
 	go func() {
 		var cam *gocv.VideoCapture
 
-		camstr := GetCamstr("nano")
+		camstr := GetCamstr(config.Camstr)
 		log.Infof("Opening VideoCapture %s", camstr)
 
 		// straight up 0
