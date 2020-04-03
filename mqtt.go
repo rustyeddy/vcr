@@ -88,8 +88,6 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 				// Do we need to stop something .?.
 				video.VideoPipeline = nil
 			}
-			// toggle ai
-			// video.
 			break
 
 		case "hello":
