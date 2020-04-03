@@ -33,7 +33,7 @@ func NewVideoPlayer(config *Configuration) (vid *VideoPlayer) {
 
 // GetChannel returns the unique channel name for this camera
 func (vid *VideoPlayer) GetAnnouncement() string {
-	return vid.Name + ":" + vid.Addr
+	return vid.Addr + ":" + vid.Name
 }
 
 // GetChannel returns the unique channel name for this camera
