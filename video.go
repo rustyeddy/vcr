@@ -11,6 +11,7 @@ import (
 // by OpenCV are supported. A version
 type VideoPlayer struct {
 	Name string
+	Addr string
 
 	// Video stream and a bool if we are recording
 	*mjpeg.Stream `json:"-"` // Stream will always be available
@@ -23,8 +24,21 @@ type VideoPlayer struct {
 
 // NewVideoPlayer will create a new video player with default nil set.
 func NewVideoPlayer(config *Configuration) (vid *VideoPlayer) {
-	vid = &VideoPlayer{} // defaults are all good
+	vid = &VideoPlayer{
+		Name: GetHostname(),
+		Addr: GetIPAddr(),
+	} // defaults are all good
 	return vid
+}
+
+// GetChannel returns the unique channel name for this camera
+func (vid *VideoPlayer) GetAnnouncement() string {
+	return vid.Name + ":" + vid.Addr
+}
+
+// GetChannel returns the unique channel name for this camera
+func (vid *VideoPlayer) GetControlChannel() string {
+	return "camera/" + vid.Name
 }
 
 // SetPipeline to be a named pipeline

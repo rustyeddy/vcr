@@ -17,18 +17,16 @@ type Messanger struct {
 	mqtt.Client
 }
 
+// NewMessager create a New messanger
 func NewMessanger(config *Configuration) (msg *Messanger) {
-	camstr := "camera/" + GetHostname()
-	if len(camstr) <= len("camera/") {
-		l.WithField("camera channel", camstr).Error("hostname bad")
-	}
 	msg = &Messanger{
 		Broker:         config.MQTT,
-		ControlChannel: camstr,
+		ControlChannel: video.GetControlChannel(),
 	}
 	return msg
 }
 
+// Start creates the MQTT client and turns the messanger on
 func (m *Messanger) Start(done <-chan interface{}, wg *sync.WaitGroup) {
 
 	opts := mqtt.NewClientOptions().AddBroker(config.MQTT).SetClientID(config.Name)
@@ -36,8 +34,8 @@ func (m *Messanger) Start(done <-chan interface{}, wg *sync.WaitGroup) {
 	opts.SetDefaultPublishHandler(m.handleIncoming)
 	opts.SetPingTimeout(10 * time.Second)
 
-	c := mqtt.NewClient(opts)
-	if t := c.Connect(); t.Wait() && t.Error() != nil {
+	m.Client = mqtt.NewClient(opts)
+	if t := m.Client.Connect(); t.Wait() && t.Error() != nil {
 		err := t.Error()
 		log.Fatal(err.Error())
 	}
@@ -47,11 +45,12 @@ func (m *Messanger) Start(done <-chan interface{}, wg *sync.WaitGroup) {
 		"channel": m.ControlChannel,
 	}).Info("Start MQTT Listener")
 
-	if t := c.Subscribe(m.ControlChannel, 0, nil); t.Wait() && t.Error() != nil {
+	if t := m.Client.Subscribe(m.ControlChannel, 0, nil); t.Wait() && t.Error() != nil {
 		log.Fatal(t.Error().Error())
 	}
 	l.WithField("topic", m.ControlChannel).Info("suscribed to topic")
-	l.WithField("announce", video.Name).Info("Announcing Ourselves")
+	l.WithField("announce", video.Addr).Info("Announcing Ourselves")
+	m.Announce()
 
 	<-done
 }
@@ -100,16 +99,17 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 
 // Announce ourselves to the announce channel
 func (m *Messanger) Announce() {
-	ipaddr := GetIPAddr()
-	data := ipaddr + ":" + video.Name
-	if m.Client != nil {
-		log.WithFields(log.Fields{
-			"Topic": "camera/announce",
-			"Data":  data,
-		}).Info("announcing our presence")
-		token := m.Client.Publish("camera/announce", 0, false, data)
-		token.Wait()
+	data := video.GetAnnouncement()
+	if m.Client == nil {
+		log.WithField("function", "Announce").Error("Expected client to be connected")
 	}
+
+	log.WithFields(log.Fields{
+		"Topic": "camera/announce",
+		"Data":  data,
+	}).Info("announcing our presence")
+	token := m.Client.Publish("camera/announce", 0, false, data)
+	token.Wait()
 }
 
 // Read stuff
