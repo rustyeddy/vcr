@@ -10,6 +10,7 @@ import (
 // the moment any camera or device string that can be read
 // by OpenCV are supported. A version
 type VideoPlayer struct {
+	Name string
 
 	// Video stream and a bool if we are recording
 	*mjpeg.Stream `json:"-"` // Stream will always be available

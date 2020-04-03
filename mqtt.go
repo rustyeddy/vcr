@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -19,11 +18,9 @@ type Messanger struct {
 }
 
 func NewMessanger(config *Configuration) (msg *Messanger) {
-	camstr := "/camera/"
-	if hname, err := os.Hostname(); err != nil {
-		l.WithError(err).Fatal("Good bye cruel world!")
-	} else {
-		camstr += hname
+	camstr := "camera/" + GetHostname()
+	if len(camstr) <= len("camera/") {
+		l.WithField("camera channel", camstr).Error("hostname bad")
 	}
 	msg = &Messanger{
 		Broker:         config.MQTT,
@@ -54,6 +51,7 @@ func (m *Messanger) Start(done <-chan interface{}, wg *sync.WaitGroup) {
 		log.Fatal(t.Error().Error())
 	}
 	l.WithField("topic", m.ControlChannel).Info("suscribed to topic")
+	l.WithField("announce", video.Name).Info("Announcing Ourselves")
 
 	<-done
 }
@@ -90,17 +88,37 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 			// video.
 			break
 
+		case "hello":
+			messanger.Announce()
+			break
+
 		default:
 			l.WithField("topic", topic).Error("unknown command")
 		}
 	}
 }
 
+// Announce ourselves to the announce channel
+func (m *Messanger) Announce() {
+	ipaddr := GetIPAddr()
+	data := ipaddr + ":" + video.Name
+	if m.Client != nil {
+		log.WithFields(log.Fields{
+			"Topic": "camera/announce",
+			"Data":  data,
+		}).Info("announcing our presence")
+		token := m.Client.Publish("camera/announce", 0, false, data)
+		token.Wait()
+	}
+}
+
+// Read stuff
 func (m *Messanger) Read(b []byte) (n int, err error) {
 	panic("Implement reader")
 	return n, err
 }
 
+// Write stuff
 func (m *Messanger) Write(b []byte) (n int, err error) {
 	panic("Implement writer")
 	return n, err
