@@ -65,7 +65,12 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 	}).Info("MQTT incoming message.")
 
 	switch {
-	case strings.Contains(topic, "/camera/"):
+	case strings.Compare(topic, "camera/announce") == 0:
+		// Ignore the controller
+		controller = payload
+		m.Announce()
+
+	case strings.Contains(topic, "camera/"):
 		switch payload {
 
 		case "on":

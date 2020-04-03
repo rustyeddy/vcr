@@ -10,11 +10,12 @@ import (
 )
 
 var (
-	config    *Configuration
-	server    *Server
-	video     *VideoPlayer
-	messanger *Messanger
-	websock   *Websock
+	config     *Configuration
+	server     *Server
+	video      *VideoPlayer
+	messanger  *Messanger
+	websock    *Websock
+	controller string
 
 	webQ chan interface{}
 )
