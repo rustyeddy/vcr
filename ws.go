@@ -79,7 +79,10 @@ func wsReader(conn *websocket.Conn) {
 		switch msg.T {
 		case "ai":
 			if msg.V == "on" {
-				video.VideoPipeline = GetPipeline("face")
+				video.VideoPipeline, err = GetPipeline(config.Pipeline)
+				if err != nil {
+					l.WithError(err)
+				}
 			} else if msg.V == "off" {
 				video.VideoPipeline = nil
 			}

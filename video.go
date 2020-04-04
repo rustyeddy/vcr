@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/apex/log"
 	"github.com/hybridgroup/mjpeg"
 	"gocv.io/x/gocv"
@@ -28,6 +30,11 @@ func NewVideoPlayer(config *Configuration) (vid *VideoPlayer) {
 		Name: GetHostname(),
 		Addr: GetIPAddr(),
 	} // defaults are all good
+
+	if config.Pipeline != "" {
+		vid.SetPipeline(config.Pipeline)
+	}
+
 	return vid
 }
 
@@ -42,19 +49,9 @@ func (vid *VideoPlayer) GetControlChannel() string {
 }
 
 // SetPipeline to be a named pipeline
-func (vid *VideoPlayer) SetPipeline(name string) {
-	var p VideoPipeline
-	var e bool
-
-	vid.PipelineName = name
-	if p, e = pipelineMap[name]; !e {
-		l.WithField("pipeline", name).Error("does not exist")
-		return
-	}
-
-	// Allow the pipeline to initialize itself getting ready for video
-	p.Setup()
-	vid.VideoPipeline = p
+func (vid *VideoPlayer) SetPipeline(name string) (err error) {
+	vid.VideoPipeline, err = GetPipeline(name)
+	return err
 }
 
 // Start Video opens the camera (sensor) and data (vidoe) starts streaming in.
@@ -80,7 +77,7 @@ func (vid *VideoPlayer) StartVideo() {
 
 	// Video pipeline are named. Setting them is as simple as passing
 	// in the name.
-	vid.SetPipeline("face")
+	//vid.SetPipeline("face")
 
 	// Both API REST server and MQTT server have started up, we are
 	// now waiting for requests to come in and instruct us wat to do.
@@ -93,6 +90,7 @@ func (vid *VideoPlayer) StartVideo() {
 		//if vid.doAI {
 		//	faced.FindFace(img)
 		//}
+		fmt.Printf("video pipeline %+v\n", vid.VideoPipeline)
 		if vid.VideoPipeline != nil {
 			vid.VideoPipeline.Send(img)
 		}

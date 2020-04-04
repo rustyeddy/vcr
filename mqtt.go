@@ -82,8 +82,13 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 			break
 
 		case "ai":
+			var err error
 			if video.VideoPipeline == nil {
-				video.VideoPipeline = GetPipeline("face")
+				video.VideoPipeline, err = GetPipeline(config.Pipeline)
+				if err != nil {
+					l.WithField("pipeline", config.Pipeline)
+					return
+				}
 			} else {
 				// Do we need to stop something .?.
 				video.VideoPipeline = nil

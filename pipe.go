@@ -1,18 +1,11 @@
 package main
 
 import (
+	"plugin"
 	"sync"
 
 	"gocv.io/x/gocv"
 )
-
-// Set up a video pipeline  with a name
-var pipelineMap map[string]VideoPipeline
-
-func init() {
-	pipelineMap = make(map[string]VideoPipeline)
-	pipelineMap["face"] = NewFaceDetector()
-}
 
 // VideoPipeline is a series of pipes that accepts and image
 // processes the image, then returns the processed image. That
@@ -21,6 +14,14 @@ func init() {
 type VideoPipeline interface {
 	Setup()
 	Send(*gocv.Mat) *gocv.Mat
+}
+
+// Set up a video pipeline  with a name
+//var pipelineMap map[string]VideoPipeline
+
+func init() {
+	//pipelineMap = make(map[string]VideoPipeline)
+	//pipelineMap["face"] = NewFaceDetector()
 }
 
 // FrameDrain listens to a channel delivering video camera images,
@@ -90,7 +91,19 @@ func (fq *VideoPipe) Send(img *gocv.Mat) *gocv.Mat {
 
 // GetPipeline will return a VideoPipeline `name` if one exists
 // in the videoPipeline.
-func GetPipeline(name string) VideoPipeline {
-	p, _ := pipelineMap[name]
-	return p
+func GetPipeline(name string) (p VideoPipeline, err error) {
+	pl, err := plugin.Open(name)
+	if err != nil {
+		return nil, err
+	}
+
+	sym, err := pl.Lookup("Pipe")
+	if err != nil {
+		return nil, err
+	}
+	p = sym.(VideoPipeline)
+
+	// Allow the pipeline to initialize itself getting ready for video
+	p.Setup()
+	return p, nil
 }

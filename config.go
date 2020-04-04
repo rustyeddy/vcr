@@ -28,7 +28,7 @@ type Configuration struct {
 
 	MQTT string `json:"mqtt"`
 
-	Pipeline   string `json:"pipeline"`
+	Pipeline   string `json:"pipeline"` // name of the plugin
 	FaceDetect bool   `json:"face-detect"`
 	XMLFile    string `json:"xmlfile"`
 }
