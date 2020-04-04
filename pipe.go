@@ -12,7 +12,6 @@ import (
 // image may then be process by another step in the pipe, which
 // may include writting to a file or
 type VideoPipeline interface {
-	Setup()
 	Send(*gocv.Mat) *gocv.Mat
 }
 
@@ -91,19 +90,18 @@ func (fq *VideoPipe) Send(img *gocv.Mat) *gocv.Mat {
 
 // GetPipeline will return a VideoPipeline `name` if one exists
 // in the videoPipeline.
-func GetPipeline(name string) (p VideoPipeline, err error) {
-	pl, err := plugin.Open(name)
+func GetPipeline(fname string) (p VideoPipeline, err error) {
+	pl, err := plugin.Open(fname)
 	if err != nil {
+		l.WithError(err).Error("failed to open plugin")
 		return nil, err
 	}
 
-	sym, err := pl.Lookup("Pipe")
+	sym, err := pl.Lookup("Pipeline")
 	if err != nil {
+		l.WithError(err).Error("Find the Pipe")
 		return nil, err
 	}
 	p = sym.(VideoPipeline)
-
-	// Allow the pipeline to initialize itself getting ready for video
-	p.Setup()
 	return p, nil
 }

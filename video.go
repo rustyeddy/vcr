@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/apex/log"
 	"github.com/hybridgroup/mjpeg"
 	"gocv.io/x/gocv"
@@ -90,7 +88,6 @@ func (vid *VideoPlayer) StartVideo() {
 		//if vid.doAI {
 		//	faced.FindFace(img)
 		//}
-		fmt.Printf("video pipeline %+v\n", vid.VideoPipeline)
 		if vid.VideoPipeline != nil {
 			vid.VideoPipeline.Send(img)
 		}

@@ -13,11 +13,15 @@ lsit. A brief of what currently works:
   + Raspberry Pi w/CSI 
   + Jetson Nano w/CSI
   + Desktop Ubuntu w/USB
-  + MacOS with builtin Cam
-  - Windows 
+  + MacOS laptop (air and pro) with builtin Cam
+  - Windows (TBD)
 + Play/Pause over MQTT and Websockets
 + Configure Get configuration with REST
-+ Set configuration with command line option (at start time)
++ Video Pipeline plugins
+  + Face detection
++ Auto Discovery with MQTT
+  + requires an MQTT broker
+  + optional if broker is MQTT broker is NOT present
 
 
 ## TODO
