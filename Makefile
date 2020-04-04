@@ -10,4 +10,6 @@ nano:
 	export GOOS=linux GOARCH=arm GOARM=7 go build -v
 
 plugins:
-	make -C p
+	make -C plugins
+
+.PHONY: all build rpi nano plugins
