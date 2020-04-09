@@ -1,6 +1,7 @@
 var ws = new WebSocket("ws://" + document.location.host + "/ws");
 var doingAI = false;
 
+// This is in VideoPlayer.vue
 function record() {
     console.log("Record");
     var sendmsg = {
@@ -11,6 +12,7 @@ function record() {
     ws.send(JSON.stringify(sendmsg));
 }
 
+// This is in VideoPlayer.vue
 function pause() {
     console.log("Pause");
     var sendmsg = {

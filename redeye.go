@@ -2,11 +2,7 @@ package main
 
 import (
 	"flag"
-	"net"
-	"os"
 	"sync"
-
-	"github.com/apex/log"
 )
 
 var (
@@ -47,61 +43,20 @@ func main() {
 	// nothing at the moment, it needs to
 	video = NewVideoPlayer(config)
 
-	//
-	// We are going to start the following servers:
+	// server provides the static website and REST APIs
 	//
 	// HTTP static website from pub/index.html (configurable)
 	// HTTP REST '/api/...' see respective sections
 	// Websocket server also listens for websocket requests
-	//
 	wg.Add(2)
 	server = NewServer(config)
 	go server.Start(&wg)
 
-	// MQTT Client connected to /topic/tempf (TODO change channels)
+	// messengar will handle realtime messaging
 	messanger = NewMessanger(config)
 	go messanger.Start(done, &wg)
 
 	// Wait forever or until all of messanger and server fail
 	wg.Wait()
 	l.Info("Good Bye.")
-}
-
-func startupInfo() {
-	if !config.Debug {
-		return
-	}
-	log.Infof("config %v\n", config)
-
-	l.WithFields(log.Fields{
-		"app":      "redeye",
-		"pid":      os.Getpid(),
-		"hostname": GetHostname(),
-	}).Info("App is starting up ...")
-}
-
-// GetHostname for ourselves
-func GetHostname() (hname string) {
-	var err error
-	if hname, err = os.Hostname(); err != nil {
-		log.WithError(err).Fatal("Good bye cruel world!")
-	}
-	return hname
-}
-
-// GetIPAddr of ourselves
-func GetIPAddr() (addr string) {
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		log.WithField("addr", addr).Fatal(err.Error())
-	}
-
-	for _, a := range addrs {
-		if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ipnet.IP.To4() != nil {
-				return ipnet.IP.String()
-			}
-		}
-	}
-	return ""
 }

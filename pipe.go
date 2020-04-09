@@ -12,6 +12,7 @@ import (
 // image may then be process by another step in the pipe, which
 // may include writting to a file or
 type VideoPipeline interface {
+	Name() string
 	Send(*gocv.Mat) *gocv.Mat
 }
 
@@ -27,9 +28,10 @@ func init() {
 // typically to observe something and perhaps perform some
 // transformation.
 type VideoPipe struct {
+	name string
+
 	Q chan *gocv.Mat // recieving data
 
-	Name    string
 	Process func(img *gocv.Mat)
 	Next    VideoPipeline // try using this!!
 }
@@ -39,11 +41,16 @@ type VideoPipe struct {
 // go through the corresponding processing.
 func NewVideoPipe(name string, pipe VideoPipeline) (fw *VideoPipe) {
 	fw = &VideoPipe{
-		Name: name,
+		name: name,
 		Q:    make(chan *gocv.Mat), // no buffers for now
 		Next: pipe,
 	}
 	return fw
+}
+
+// Name returns the name of this pipeline
+func (p *VideoPipe) Name() string {
+	return p.name
 }
 
 // Setup run optional setup.
