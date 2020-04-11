@@ -19,7 +19,6 @@ type VideoPlayer struct {
 
 	// VideoPipeline filtering video. If nil, we have no filter or pipeline.
 	VideoPipeline `json:"-"`
-	PipelineName  string `json:"pipeline"`
 }
 
 // NewVideoPlayer will create a new video player with default nil set.
@@ -61,6 +60,16 @@ func (vid *VideoPlayer) StartVideo() {
 	l.Info("StartVideo Entered ... ")
 	defer l.Info("StartVideo Finished")
 
+	// This is pretty simple, almost every system that openCV supports
+	// will use an integer or a string, for example I have testing this
+	// on the following devices with the respective strings
+	//
+	// ubuntu-amd64 /dev/video0 v4l
+	// macos 0 builtin
+	// raspberry-pi 0 CSI
+	// nano pipeline gstreamer-pipeline
+	//
+	// use -camstr to make sure it comes out correctly
 	var cstr interface{}
 	cstr = config.Camstr
 	if cstr == "0" {

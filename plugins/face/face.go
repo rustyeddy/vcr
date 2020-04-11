@@ -9,25 +9,36 @@ import (
 )
 
 type FacePipeline struct {
+	name    string
+	xmlFile string
+
 	gocv.CascadeClassifier
 }
 
 var (
 	// color for the rect when faces detected
 	Blue     = color.RGBA{0, 0, 255, 0}
-	Pipeline = FacePipeline{}
+	Pipeline = FacePipeline{
+		name:    "face",
+		xmlFile: "data/haarcascade_upperbody.xml",
+	}
 )
 
 func init() {
-	Pipeline.LoadClassifier("data/haarcascade_upperbody.xml")
+	Pipeline.LoadClassifier()
+}
+
+// Name is the name of the pipe line
+func (f *FacePipeline) Name() string {
+	return f.name
 }
 
 // LoadClassier accept the filename of a HaarCascade .xml file
-func (f *FacePipeline) LoadClassifier(fname string) (err error) {
+func (f *FacePipeline) LoadClassifier() (err error) {
 	// load classifier to recognize faces
 	f.CascadeClassifier = gocv.NewCascadeClassifier()
-	if !f.CascadeClassifier.Load(fname) {
-		return errors.New("Error reading cascade file: " + fname)
+	if !f.CascadeClassifier.Load(f.xmlFile) {
+		return errors.New("Error reading cascade file: " + f.xmlFile)
 	}
 	return nil
 }

@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/apex/log"
 	"github.com/gorilla/mux"
 	"github.com/hybridgroup/mjpeg"
+	"github.com/rs/zerolog/log"
 )
 
 type Server struct {
@@ -33,22 +33,24 @@ func NewServer(config *Configuration) (srv *Server) {
 		ReadTimeout:  15 * time.Second,
 	}
 
-	// =============================== Add Routes ========================
 	srv.AddRoute("/ws", wsUpgradeHndl)
 	srv.AddRoute("/api/health", healthCheckHndl)
 	srv.AddRoute("/api/config", getConfigHndl)
-	srv.AddRoute("/api/config/{key}/{val}", setConfigValsHndl)
-	srv.AddRoute("/api/record/{onoff}", setRecordHndl)
+	srv.AddRoute("/api/camera/status", getCameraHndl)
+	srv.AddRoute("/api/camera/play", setPlayHndl)
+	srv.AddRoute("/api/camera/pause", setPauseHndl)
+	srv.AddRoute("/api/camera/snap", setSnapHndl)
 
 	// app = spaHandler{StaticPath: "pub", IndexPath: "index.html"}
 	srv.Router.PathPrefix("/").Handler(srv)
+	log.Print("New Server created")
 
 	return srv
 }
 
 // AddRoute allows us to dynamically add routes at runtime via a plugin
 func (srv *Server) AddRoute(path string, handlr func(http.ResponseWriter, *http.Request)) {
-	l.WithField("path", path).Info("adding handler")
+	log.Info().Str("path", path).Msg("adding handler")
 	srv.Router.HandleFunc(path, handlr)
 }
 
@@ -60,10 +62,11 @@ func (srv *Server) Start(wg *sync.WaitGroup) {
 
 	// Set the route for video
 	vpath := "/mjpeg"
-	l.WithFields(log.Fields{
-		"address": config.VideoAddr,
-		"path":    vpath,
-	}).Info("Start Video Server")
+	log.Info().
+		Str("address", config.VideoAddr).
+		Str("path", vpath).
+		Msg("Start Video Server")
+
 	video.Stream = mjpeg.NewStream()
 	http.Handle(vpath, video.Stream)
 
@@ -88,6 +91,7 @@ func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// if we failed to get the absolute path respond with a 400 bad request
 		// and stop
+		log.Error().Str("Status", "Bad Request").Msg(err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -129,13 +133,50 @@ func getConfigHndl(w http.ResponseWriter, r *http.Request) {
 
 func setConfigValsHndl(w http.ResponseWriter, r *http.Request) {
 	// Assume we accept a config "json" of replacement strings
-	log.Fatal("TODO config vals")
+	log.Fatal().Msg("TODO config vals")
 }
 
-func setRecordHndl(w http.ResponseWriter, r *http.Request) {
+func setPlayHndl(w http.ResponseWriter, r *http.Request) {
 	// an example API handler
 	if !video.Recording {
-		video.StartVideo()
+		// block otherwise because the video player creation and play
+		// loop are in this same function, which maybe should be
+		// separated?
+		go video.StartVideo()
 	}
 	json.NewEncoder(w).Encode(map[string]bool{"ok": true})
+}
+
+func setPauseHndl(w http.ResponseWriter, r *http.Request) {
+	// an example API handler
+	if video.Recording {
+		video.StopVideo()
+	}
+	json.NewEncoder(w).Encode(map[string]bool{"ok": true})
+}
+
+func setSnapHndl(w http.ResponseWriter, r *http.Request) {
+	// an example API handler
+	if !video.Recording {
+		//video.StartVideo()
+	}
+	json.NewEncoder(w).Encode(map[string]bool{"ok": true})
+}
+
+// getCameraStatus will return the real-time information from the camera
+func getCameraHndl(w http.ResponseWriter, r *http.Request) {
+	var s CameraStatus
+	if video != nil {
+		s.Name = video.Name
+		s.Addr = video.Addr
+		s.Status = "Paused"
+		if video.Recording {
+			s.Status = "Playing"
+		}
+		if video.VideoPipeline != nil {
+			s.PipelineName = video.VideoPipeline.Name()
+		}
+	}
+
+	json.NewEncoder(w).Encode(s)
 }

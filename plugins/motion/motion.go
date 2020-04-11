@@ -10,10 +10,11 @@ import (
 const MinimumArea = 3000
 
 type MotionPipeline struct {
+	name string
 }
 
 var (
-	Pipeline = MotionPipeline{}
+	Pipeline = MotionPipeline{"motion"}
 
 	imgDelta  = gocv.NewMat()
 	imgThresh = gocv.NewMat()
@@ -26,6 +27,10 @@ var (
 	Green = color.RGBA{0, 255, 0, 0}
 	Blue  = color.RGBA{0, 0, 255, 0}
 )
+
+func (m *MotionPipeline) Name() string {
+	return m.name
+}
 
 func (m *MotionPipeline) Send(img *gocv.Mat) *gocv.Mat {
 	status = "Ready"

@@ -11,12 +11,10 @@ RedEye the smart camera software.
 */
 package main
 
-// Camera representation to outside world
-type Camera struct {
-	Name      string
-	Location  string
-	Pipeline  string
-	Recording bool
-
-	Clips []string
+// The Camera Status
+type CameraStatus struct {
+	Name         string
+	Addr         string
+	Status       string
+	PipelineName string
 }

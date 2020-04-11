@@ -46,7 +46,7 @@ func GetConfig() *Configuration {
 	flag.StringVar(&c.ConfigFile, "config", "redeye.json", "Config file: redeye.json")
 	flag.StringVar(&c.Loglevel, "loglevel", "info", "default log level is debug")
 	flag.StringVar(&c.VideoAddr, "video-addr", "0.0.0.0:8887", "web address default 0.0.0.0:8887")
-	flag.StringVar(&c.Pipeline, "pipeline", "p/p.so", "Face detect")
+	flag.StringVar(&c.Pipeline, "pipeline", "plugins/face/face.so", "Face detect")
 
 	flag.BoolVar(&c.ServeVideo, "serve-video", true, "display video on local screen if available")
 	flag.BoolVar(&c.DisplayVideo, "display-video", true, "display video on local screen if available")
@@ -60,7 +60,6 @@ func GetConfig() *Configuration {
 // ReadConfig reads the Configuration from a file.
 func ReadConfig(name string) (c *Configuration) {
 	log.Fatal("TODO: Write the configuration file")
-
 	return c
 }
 
