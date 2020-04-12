@@ -25,12 +25,20 @@ var (
 )
 
 func init() {
-	Pipeline.LoadClassifier()
 }
 
 // Name is the name of the pipe line
 func (f *FacePipeline) Name() string {
 	return f.name
+}
+
+// Setup allows us to setup the plugins
+func (f *FacePipeline) Setup() error {
+	err := f.LoadClassifier()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // LoadClassier accept the filename of a HaarCascade .xml file

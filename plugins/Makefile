@@ -5,3 +5,5 @@ face:
 
 motion:
 	$(MAKE) -C motion
+
+.PHONY: face motion

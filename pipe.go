@@ -13,15 +13,8 @@ import (
 // may include writting to a file or
 type VideoPipeline interface {
 	Name() string
+	Setup() error
 	Send(*gocv.Mat) *gocv.Mat
-}
-
-// Set up a video pipeline  with a name
-//var pipelineMap map[string]VideoPipeline
-
-func init() {
-	//pipelineMap = make(map[string]VideoPipeline)
-	//pipelineMap["face"] = NewFaceDetector()
 }
 
 // FrameDrain listens to a channel delivering video camera images,
@@ -30,8 +23,7 @@ func init() {
 type VideoPipe struct {
 	name string
 
-	Q chan *gocv.Mat // recieving data
-
+	Q       chan *gocv.Mat // recieving data
 	Process func(img *gocv.Mat)
 	Next    VideoPipeline // try using this!!
 }
@@ -80,7 +72,7 @@ func (fq *VideoPipe) Listen(done <-chan bool, wg *sync.WaitGroup) {
 			fq.Process(img)
 		}
 
-		// TODO must be tested ...
+		// TODO must be tested (how about sending on channel) ...
 		if fq.Next != nil {
 			fq.Next.Send(img)
 		}
@@ -98,6 +90,11 @@ func (fq *VideoPipe) Send(img *gocv.Mat) *gocv.Mat {
 // GetPipeline will return a VideoPipeline `name` if one exists
 // in the videoPipeline.
 func GetPipeline(fname string) (p VideoPipeline, err error) {
+	var ex bool
+	if p, ex = pipelines[fname]; ex {
+		return p, nil
+	}
+
 	pl, err := plugin.Open(fname)
 	if err != nil {
 		l.WithError(err).Error("failed to open plugin")
@@ -110,5 +107,6 @@ func GetPipeline(fname string) (p VideoPipeline, err error) {
 		return nil, err
 	}
 	p = sym.(VideoPipeline)
+	pipelines[fname] = p
 	return p, nil
 }

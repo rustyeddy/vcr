@@ -8,10 +8,11 @@ import (
 var (
 	config     *Configuration
 	server     *Server
-	video      *VideoPlayer
 	messanger  *Messanger
 	websock    *Websock
 	controller string
+	video      *VideoPlayer
+	pipelines  map[string]VideoPipeline
 
 	webQ chan interface{}
 )
@@ -19,6 +20,7 @@ var (
 func init() {
 	// Load a config file if we have one
 	config = GetConfig()
+	pipelines = make(map[string]VideoPipeline)
 }
 
 func main() {

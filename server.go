@@ -40,6 +40,7 @@ func NewServer(config *Configuration) (srv *Server) {
 	srv.AddRoute("/api/camera/play", setPlayHndl)
 	srv.AddRoute("/api/camera/pause", setPauseHndl)
 	srv.AddRoute("/api/camera/snap", setSnapHndl)
+	srv.AddRoute("/api/pipelines", getPipelinesHndl)
 
 	// app = spaHandler{StaticPath: "pub", IndexPath: "index.html"}
 	srv.Router.PathPrefix("/").Handler(srv)
@@ -179,4 +180,9 @@ func getCameraHndl(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(s)
+}
+
+// getCameraStatus will return the real-time information from the camera
+func getPipelinesHndl(w http.ResponseWriter, r *http.Request) {
+	json.NewEncoder(w).Encode(pipelines)
 }

@@ -11,10 +11,14 @@ RedEye the smart camera software.
 */
 package main
 
-// The Camera Status
+// CameraStatus is passed along in the REST call
 type CameraStatus struct {
 	Name         string
 	Addr         string
 	Status       string
 	PipelineName string
+}
+
+type Pipelines struct {
+	Name []string
 }

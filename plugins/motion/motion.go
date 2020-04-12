@@ -32,6 +32,10 @@ func (m *MotionPipeline) Name() string {
 	return m.name
 }
 
+func (m *MotionPipeline) Setup() error {
+	return nil
+}
+
 func (m *MotionPipeline) Send(img *gocv.Mat) *gocv.Mat {
 	status = "Ready"
 	statusColor := Blue
