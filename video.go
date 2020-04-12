@@ -1,8 +1,10 @@
 package main
 
 import (
-	"github.com/apex/log"
+	"fmt"
+
 	"github.com/hybridgroup/mjpeg"
+	"github.com/rs/zerolog/log"
 	"gocv.io/x/gocv"
 )
 
@@ -19,13 +21,16 @@ type VideoPlayer struct {
 
 	// VideoPipeline filtering video. If nil, we have no filter or pipeline.
 	VideoPipeline `json:"-"`
+	SnapRequest   bool
+	Filename      string
 }
 
 // NewVideoPlayer will create a new video player with default nil set.
 func NewVideoPlayer(config *Configuration) (vid *VideoPlayer) {
 	vid = &VideoPlayer{
-		Name: GetHostname(),
-		Addr: GetIPAddr(),
+		Name:     GetHostname(),
+		Addr:     GetIPAddr(),
+		Filename: "thumbnail.jpg",
 	} // defaults are all good
 
 	if config.Pipeline != "" {
@@ -76,7 +81,7 @@ func (vid *VideoPlayer) StartVideo() {
 		cstr = 0
 	}
 
-	defer l.WithField("devid", cstr).Trace("entered start vid").Stop(&err)
+	defer log.Info().Str("devid", config.Camstr).Msg("entered start vid")
 	if vid.Recording {
 		l.Error("camera already recording")
 		return
@@ -107,17 +112,34 @@ func (vid *VideoPlayer) StartVideo() {
 		if err != nil {
 			l.Fatal("Failed encoding jpg")
 		}
+
 		vid.Stream.UpdateJPEG(buf)
+
+		// Check to see if a nsapshot has been requested, if so then
+		// take a snapshot. TODO put this in the video pipeline
+		if vid.SnapRequest {
+			fname := "pub/img/snapshot.jpg"
+			// Create the store
+
+			var ok bool
+			if ok = gocv.IMWrite(fname, *img); !ok {
+				log.Error().Str("filename", fname).Msg("Snapshot failed to save ")
+			}
+
+			fmt.Printf("snap requested %s .. ok: %v ", fname, ok)
+			log.Info().Str("filename", fname).Msg("Snapshot saved")
+
+			vid.SnapRequest = false
+		}
 	}
-	l.Info("")
 }
 
 // StopVideo shuts the sensor down and turns
 func (vid *VideoPlayer) StopVideo() {
-	defer l.WithFields(log.Fields{
-		"cameraid":  config.Camstr,
-		"recording": vid.Recording,
-	}).Trace("Stop StreamVideo").Stop(nil)
+	defer log.Info().
+		Str("cameraid", config.Camstr).
+		Bool("recording", vid.Recording).
+		Msg("Stop StreamVideo")
 
 	// Need to sync around this recording video (or can we use a channel)
 	vid.Recording = false
@@ -137,10 +159,10 @@ func (vid *VideoPlayer) StreamVideo(devstr string) (frames <-chan *gocv.Mat) {
 	// Create the channel we are going to pump frames through
 	frameQ := make(chan *gocv.Mat)
 
-	defer l.WithFields(log.Fields{
-		"camera":    devstr,
-		"recording": vid.Recording,
-	}).Trace("StreamVideo").Stop(&err)
+	defer log.Info().
+		Str("cameraid", config.Camstr).
+		Bool("recording", vid.Recording).
+		Msg("Stop StreamVideo")
 
 	// go function opens the webcam and starts reading from device, coping frames
 	// to the frameQ processing channel
@@ -148,13 +170,15 @@ func (vid *VideoPlayer) StreamVideo(devstr string) (frames <-chan *gocv.Mat) {
 		var cam *gocv.VideoCapture
 
 		camstr := GetCamstr(config.Camstr)
-		log.Infof("Opening VideoCapture %s", camstr)
+		defer log.Info().
+			Str("camstr", camstr).
+			Msg("Opening VideoCapture")
 
 		// straight up 0
 		//cam, err = gocv.OpenVideoCapture(camstr)
 		cam, err = gocv.OpenVideoCapture(0)
 		if err != nil {
-			l.Fatal("failed to open video capture device")
+			log.Fatal().Msg("failed to open video capture device")
 			return
 		}
 		defer cam.Close()
@@ -196,7 +220,7 @@ func (vid *VideoPlayer) StreamVideo(devstr string) (frames <-chan *gocv.Mat) {
 func GetCamstr(name string) (camstr string) {
 	var ex bool
 	if camstr, ex = camstrmap[name]; !ex {
-		log.Errorf("camstr name %s NOT Found", name)
+		log.Error().Str("name", name).Msg("camstr NOT Found")
 	}
 	return camstr
 }

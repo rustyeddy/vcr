@@ -157,10 +157,7 @@ func setPauseHndl(w http.ResponseWriter, r *http.Request) {
 }
 
 func setSnapHndl(w http.ResponseWriter, r *http.Request) {
-	// an example API handler
-	if !video.Recording {
-		//video.StartVideo()
-	}
+	video.SnapRequest = true
 	json.NewEncoder(w).Encode(map[string]bool{"ok": true})
 }
 
