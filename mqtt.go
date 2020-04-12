@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/apex/log"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/rs/zerolog/log"
 )
 
 // Messanger handles messages and video channels
@@ -15,6 +15,7 @@ type Messanger struct {
 	ControlChannel string
 
 	mqtt.Client
+	Error error
 }
 
 // NewMessager create a New messanger
@@ -36,20 +37,22 @@ func (m *Messanger) Start(done <-chan interface{}, wg *sync.WaitGroup) {
 
 	m.Client = mqtt.NewClient(opts)
 	if t := m.Client.Connect(); t.Wait() && t.Error() != nil {
-		err := t.Error()
-		log.Fatal(err.Error())
+		m.Error = t.Error()
+		log.Error().Str("error", m.Error.Error()).Msg("Failed opening MQTT client")
+		return
 	}
 
-	l.WithFields(log.Fields{
-		"broker":  config.MQTT,
-		"channel": m.ControlChannel,
-	}).Info("Start MQTT Listener")
+	log.Info().
+		Str("broker", config.MQTT).
+		Str("channel", m.ControlChannel).
+		Msg("Start MQTT Listener")
 
 	if t := m.Client.Subscribe(m.ControlChannel, 0, nil); t.Wait() && t.Error() != nil {
-		log.Fatal(t.Error().Error())
+		log.Error().Str("error", m.Error.Error()).Msg("Failed to subscribe to mqtt socket")
+		return
 	}
-	l.WithField("topic", m.ControlChannel).Info("suscribed to topic")
-	l.WithField("announce", video.Addr).Info("Announcing Ourselves")
+	log.Info().Str("topic", m.ControlChannel).Msg("suscribed to topic")
+	log.Info().Str("announce", video.Addr).Msg("Announcing Ourselves")
 	m.Announce()
 
 	<-done
@@ -59,10 +62,10 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 	topic := msg.Topic()
 	payload := string(msg.Payload())
 
-	l.WithFields(log.Fields{
-		"topic":   topic,
-		"message": payload,
-	}).Info("MQTT incoming message.")
+	log.Info().
+		Str("topic", topic).
+		Str("message", payload).
+		Msg("MQTT incoming message.")
 
 	switch {
 	case strings.Compare(topic, "camera/announce") == 0:
@@ -86,7 +89,7 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 			if video.VideoPipeline == nil {
 				video.VideoPipeline, err = GetPipeline(config.Pipeline)
 				if err != nil {
-					l.WithField("pipeline", config.Pipeline)
+					log.Error().Str("pipeline", config.Pipeline).Msg("Failed to get pipeline")
 					return
 				}
 			} else {
@@ -100,7 +103,7 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 			break
 
 		default:
-			l.WithField("topic", topic).Error("unknown command")
+			log.Error().Str("topic", topic).Msg("unknown command")
 		}
 	}
 }
@@ -109,13 +112,13 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 func (m *Messanger) Announce() {
 	data := video.GetAnnouncement()
 	if m.Client == nil {
-		log.WithField("function", "Announce").Error("Expected client to be connected")
+		log.Error().Str("function", "Announce").Msg("Expected client to be connected")
 	}
 
-	log.WithFields(log.Fields{
-		"Topic": "camera/announce",
-		"Data":  data,
-	}).Info("announcing our presence")
+	log.Info().
+		Str("Topic", "camera/announce").
+		Str("Data", data).
+		Msg("announcing our presence")
 	token := m.Client.Publish("camera/announce", 0, false, data)
 	token.Wait()
 }
