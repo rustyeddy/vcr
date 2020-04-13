@@ -64,13 +64,7 @@ func StartVideo(wg *sync.WaitGroup, config *Configuration) {
 
 	video = GetVideoPlayer(config)
 	video.Stream = mjpeg.NewStream()
-
-	vid := GetVideoPlayer(config)
-	http.Handle(vpath, vid.Stream)
-
-	// Listen to requests for video at videoaddr. NOTE: VideoServer actually
-	// turns the video camera stream on and off through the control api
-	// via REST, MQTT or WebUI.
+	http.Handle(vpath, video.Stream)
 	http.ListenAndServe(config.VideoAddr, nil)
 }
 
