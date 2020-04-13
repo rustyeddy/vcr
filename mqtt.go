@@ -15,8 +15,8 @@ var (
 
 // Messanger handles messages and video channels
 type Messanger struct {
-	Broker         string // MQTT Broker
-	ControlChannel string
+	Broker         string
+	Subscriptions []string
 
 	mqtt.Client
 	Error error
@@ -31,6 +31,7 @@ func GetMessanger() *Messanger {
 	return messanger
 }
 
+// StartMessanger 
 func StartMessanger(wg *sync.WaitGroup, config *Configuration) {
 	defer wg.Done()
 
@@ -47,20 +48,27 @@ func StartMessanger(wg *sync.WaitGroup, config *Configuration) {
 		return
 	}
 
-	/* NOTNOW
+	for _, topic := range m.Subscriptions {
+		m.Subscribe(topic)
+	}
+
+	log.Info().Str("announce", video.Addr).Msg("Announcing Ourselves")
+	m.Announce()
+}
+
+// Subscribe to the given channel
+func (m *Messanger) Subscribe(topic string) {
 	log.Info().
 		Str("broker", config.MQTT).
-		Str("channel", m.ControlChannel).
+		Str("channel", topic).
 		Msg("Start MQTT Listener")
 
-	if t := m.Client.Subscribe(m.ControlChannel, 0, nil); t.Wait() && t.Error() != nil {
+	if t := m.Client.Subscribe(topic, 0, nil); t.Wait() && t.Error() != nil {
 		log.Error().Str("error", m.Error.Error()).Msg("Failed to subscribe to mqtt socket")
 		return
 	}
-	log.Info().Str("topic", m.ControlChannel).Msg("suscribed to topic")
-	log.Info().Str("announce", video.Addr).Msg("Announcing Ourselves")
-	*/
-	m.Announce()
+	log.Info().Str("topic", topic).Msg("suscribed to topic")
+	m.Subscriptions = append(m.Subscriptions, topic)
 }
 
 func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {

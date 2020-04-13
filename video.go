@@ -47,6 +47,11 @@ func GetVideoPlayer(config *Configuration) *VideoPlayer {
 		if config.Pipeline != "" {
 			video.SetPipeline(config.Pipeline)
 		}
+
+		// If the messanger is running, subscribe to our control topic
+		if m := GetMessanger(); m != nil {
+			m.Subscribe(video.GetControlChannel())
+		}
 	}
 	return video
 }
@@ -63,6 +68,7 @@ func StartVideo(wg *sync.WaitGroup, config *Configuration) {
 		Msg("Start Video Server")
 
 	video = GetVideoPlayer(config)
+
 	video.Stream = mjpeg.NewStream()
 	http.Handle(vpath, video.Stream)
 	http.ListenAndServe(config.VideoAddr, nil)
@@ -91,29 +97,17 @@ func (vid *VideoPlayer) StartVideo() {
 	var buf []byte
 
 	log.Info().Msg("StartVideo Entered ... ")
-	defer log.Info().Msg(" video Finished")
-
-	defer log.Info().Str("devid", config.Camstr).Msg("entered start vid")
+	defer log.Info().Msg(" XXX video has Finished")
 	if vid.Recording {
-		log.Error().Msg("camera already recording")
+		log.Warn().Msg("camera is already recording")
 		return
 	}
-
-	// Video pipeline are named. Setting them is as simple as passing
-	// in the name.
-	//vid.SetPipeline("face")
 
 	// Both API REST server and MQTT server have started up, we are
 	// now waiting for requests to come in and instruct us wat to do.
 	for img := range vid.PumpVideo() {
 
-		// Here we run through the AI, or whatever filter chain we are going
-		// to use. For now it is hard coded with face detect, this will become
-		// more flexible by allowing serial and concurrent filters.
-
-		//if vid.doAI {
-		//	faced.FindFace(img)
-		//}
+		// Filter images if a VideoPipeline has been setup
 		if vid.VideoPipeline != nil {
 			vid.VideoPipeline.Send(img)
 		}
@@ -144,10 +138,14 @@ func (vid *VideoPlayer) StartVideo() {
 			vid.SnapRequest = false
 		}
 	}
+	log.Info().Msg("Stopping Video")
 }
 
 // StreamVideo takes a device string, starts the video stream and
 // starts pumping single JPEG images from the camera stream.
+//
+// TODO: Change this to Camera and create an interface that
+// is sufficient for video files and imagnes.
 func (vid *VideoPlayer) PumpVideo() (frames <-chan *gocv.Mat) {
 	var err error
 
@@ -159,7 +157,6 @@ func (vid *VideoPlayer) PumpVideo() (frames <-chan *gocv.Mat) {
 
 	// Create the channel we are going to pump frames through
 	frameQ := make(chan *gocv.Mat)
-
 	defer log.Info().
 		Str("cameraid", vid.Camstr).
 		Bool("recording", vid.Recording).
@@ -168,8 +165,9 @@ func (vid *VideoPlayer) PumpVideo() (frames <-chan *gocv.Mat) {
 	// go function opens the webcam and starts reading from device, coping frames
 	// to the frameQ processing channel
 	go func() {
-		var cam *gocv.VideoCapture
 
+		// Open the camera (capture device)
+		var cam *gocv.VideoCapture
 		camstr := GetCamstr(vid.Camstr)
 		defer log.Info().
 			Str("camstr", camstr).
@@ -181,6 +179,7 @@ func (vid *VideoPlayer) PumpVideo() (frames <-chan *gocv.Mat) {
 			return
 		}
 		defer cam.Close()
+
 
 		log.Info().Msg("Camera streaming  ...")
 
