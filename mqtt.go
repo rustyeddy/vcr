@@ -9,6 +9,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+var (
+	messanger *Messanger
+)
+
 // Messanger handles messages and video channels
 type Messanger struct {
 	Broker         string // MQTT Broker
@@ -18,18 +22,19 @@ type Messanger struct {
 	Error error
 }
 
-// NewMessager create a New messanger
-func NewMessanger(config *Configuration) (msg *Messanger) {
-	msg = &Messanger{
-		Broker:         config.MQTT,
-		ControlChannel: video.GetControlChannel(),
+func GetMessanger() *Messanger {
+	if messanger == nil {
+		messanger = &Messanger{
+			Broker: config.MQTT,
+		}
 	}
-	return msg
+	return messanger
 }
 
-// Start creates the MQTT client and turns the messanger on
-func (m *Messanger) Start(done <-chan interface{}, wg *sync.WaitGroup) {
+func StartMessanger(wg *sync.WaitGroup, config *Configuration) {
+	defer wg.Done()
 
+	m := GetMessanger()
 	opts := mqtt.NewClientOptions().AddBroker(config.MQTT).SetClientID(config.Name)
 	opts.SetKeepAlive(2 * time.Second)
 	opts.SetDefaultPublishHandler(m.handleIncoming)
@@ -42,6 +47,7 @@ func (m *Messanger) Start(done <-chan interface{}, wg *sync.WaitGroup) {
 		return
 	}
 
+	/* NOTNOW
 	log.Info().
 		Str("broker", config.MQTT).
 		Str("channel", m.ControlChannel).
@@ -53,9 +59,8 @@ func (m *Messanger) Start(done <-chan interface{}, wg *sync.WaitGroup) {
 	}
 	log.Info().Str("topic", m.ControlChannel).Msg("suscribed to topic")
 	log.Info().Str("announce", video.Addr).Msg("Announcing Ourselves")
+	*/
 	m.Announce()
-
-	<-done
 }
 
 func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
@@ -99,7 +104,7 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 			break
 
 		case "hello":
-			messanger.Announce()
+			m.Announce()
 			break
 
 		default:

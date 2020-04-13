@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/hybridgroup/mjpeg"
 	"github.com/rs/zerolog/log"
 )
 
@@ -20,10 +19,16 @@ type Server struct {
 	*mux.Router
 }
 
+var (
+	server *Server
+)
+
 // NewServer will create the Server struct, fill in the address, create
 // a router, register the route handlers then return
-func NewServer(config *Configuration) (srv *Server) {
-	srv = &Server{}
+func StartHTTP(wg *sync.WaitGroup, config *Configuration) {
+	defer wg.Done()
+
+	srv := &Server{}
 	srv.Router = mux.NewRouter()
 	srv.Server = &http.Server{
 		Handler: srv.Router,
@@ -46,7 +51,10 @@ func NewServer(config *Configuration) (srv *Server) {
 	srv.Router.PathPrefix("/").Handler(srv)
 	log.Print("New Server created")
 
-	return srv
+	// Startup HTTP server
+	l.WithField("addr", srv.Addr).Info("Starting HTTP Server ...")
+	err := srv.Server.ListenAndServe()
+	l.Fatal(err.Error())
 }
 
 // AddRoute allows us to dynamically add routes at runtime via a plugin
@@ -61,25 +69,6 @@ func (srv *Server) AddRoute(path string, handlr func(http.ResponseWriter, *http.
 func (srv *Server) Start(wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	// Set the route for video
-	vpath := "/mjpeg"
-	log.Info().
-		Str("address", config.VideoAddr).
-		Str("path", vpath).
-		Msg("Start Video Server")
-
-	video.Stream = mjpeg.NewStream()
-	http.Handle(vpath, video.Stream)
-
-	// Listen to requests for video at videoaddr. NOTE: VideoServer actually
-	// turns the video camera stream on and off through the control api
-	// via REST, MQTT or WebUI.
-	go http.ListenAndServe(config.VideoAddr, nil)
-
-	// Startup HTTP server
-	l.WithField("addr", srv.Addr).Info("Starting HTTP Server ...")
-	err := srv.Server.ListenAndServe()
-	l.Fatal(err.Error())
 }
 
 // ServeHTTP inspects the URL path to locate a file within the static dir

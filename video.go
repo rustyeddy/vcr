@@ -2,18 +2,25 @@ package main
 
 import (
 	"fmt"
+	"net/http"
+	"sync"
 
 	"github.com/hybridgroup/mjpeg"
 	"github.com/rs/zerolog/log"
 	"gocv.io/x/gocv"
 )
 
+var (
+	video *VideoPlayer
+)
+
 // VidePlayer will open and take control a single camera. At
 // the moment any camera or device string that can be read
 // by OpenCV are supported. A version
 type VideoPlayer struct {
-	Name string
-	Addr string
+	Name   string
+	Addr   string
+	Camstr string // String representing the camera
 
 	// Video stream and a bool if we are recording
 	*mjpeg.Stream `json:"-"` // Stream will always be available
@@ -22,22 +29,49 @@ type VideoPlayer struct {
 	// VideoPipeline filtering video. If nil, we have no filter or pipeline.
 	VideoPipeline `json:"-"`
 	SnapRequest   bool
-	Filename      string
+
+	// Storage filename or directory
+	Filename string
+}
+
+// GetVideoPlayer will create or return the video player
+func GetVideoPlayer(config *Configuration) *VideoPlayer {
+	if video == nil {
+		video = &VideoPlayer{
+			Name:     GetHostname(),
+			Addr:     GetIPAddr(),
+			Filename: "img/thumbnail.jpg",
+			Camstr:   config.Camstr,
+		} // defaults are all good
+
+		if config.Pipeline != "" {
+			video.SetPipeline(config.Pipeline)
+		}
+	}
+	return video
 }
 
 // NewVideoPlayer will create a new video player with default nil set.
-func NewVideoPlayer(config *Configuration) (vid *VideoPlayer) {
-	vid = &VideoPlayer{
-		Name:     GetHostname(),
-		Addr:     GetIPAddr(),
-		Filename: "thumbnail.jpg",
-	} // defaults are all good
+func StartVideo(wg *sync.WaitGroup, config *Configuration) {
+	defer wg.Done()
 
-	if config.Pipeline != "" {
-		vid.SetPipeline(config.Pipeline)
-	}
+	// Set the route for video
+	vpath := "/mjpeg"
+	log.Info().
+		Str("address", config.VideoAddr).
+		Str("path", vpath).
+		Msg("Start Video Server")
 
-	return vid
+	video = GetVideoPlayer(config)
+	video.Stream = mjpeg.NewStream()
+
+	vid := GetVideoPlayer(config)
+	http.Handle(vpath, vid.Stream)
+
+	// Listen to requests for video at videoaddr. NOTE: VideoServer actually
+	// turns the video camera stream on and off through the control api
+	// via REST, MQTT or WebUI.
+	http.ListenAndServe(config.VideoAddr, nil)
 }
 
 // GetChannel returns the unique channel name for this camera
@@ -62,28 +96,12 @@ func (vid *VideoPlayer) StartVideo() {
 	var err error
 	var buf []byte
 
-	l.Info("StartVideo Entered ... ")
-	defer l.Info("StartVideo Finished")
-
-	// This is pretty simple, almost every system that openCV supports
-	// will use an integer or a string, for example I have testing this
-	// on the following devices with the respective strings
-	//
-	// ubuntu-amd64 /dev/video0 v4l
-	// macos 0 builtin
-	// raspberry-pi 0 CSI
-	// nano pipeline gstreamer-pipeline
-	//
-	// use -camstr to make sure it comes out correctly
-	var cstr interface{}
-	cstr = config.Camstr
-	if cstr == "0" {
-		cstr = 0
-	}
+	log.Info().Msg("StartVideo Entered ... ")
+	defer log.Info().Msg(" video Finished")
 
 	defer log.Info().Str("devid", config.Camstr).Msg("entered start vid")
 	if vid.Recording {
-		l.Error("camera already recording")
+		log.Error().Msg("camera already recording")
 		return
 	}
 
@@ -93,7 +111,7 @@ func (vid *VideoPlayer) StartVideo() {
 
 	// Both API REST server and MQTT server have started up, we are
 	// now waiting for requests to come in and instruct us wat to do.
-	for img := range vid.StreamVideo(config.Camstr) {
+	for img := range vid.PumpVideo() {
 
 		// Here we run through the AI, or whatever filter chain we are going
 		// to use. For now it is hard coded with face detect, this will become
@@ -110,7 +128,7 @@ func (vid *VideoPlayer) StartVideo() {
 		// Finalize the annotated image. XXX maybe we create a write channel?
 		buf, err = gocv.IMEncode(".jpg", *img)
 		if err != nil {
-			l.Fatal("Failed encoding jpg")
+			log.Fatal().Msg("Failed encoding jpg")
 		}
 
 		vid.Stream.UpdateJPEG(buf)
@@ -134,25 +152,14 @@ func (vid *VideoPlayer) StartVideo() {
 	}
 }
 
-// StopVideo shuts the sensor down and turns
-func (vid *VideoPlayer) StopVideo() {
-	defer log.Info().
-		Str("cameraid", config.Camstr).
-		Bool("recording", vid.Recording).
-		Msg("Stop StreamVideo")
-
-	// Need to sync around this recording video (or can we use a channel)
-	vid.Recording = false
-}
-
 // StreamVideo takes a device string, starts the video stream and
 // starts pumping single JPEG images from the camera stream.
-func (vid *VideoPlayer) StreamVideo(devstr string) (frames <-chan *gocv.Mat) {
+func (vid *VideoPlayer) PumpVideo() (frames <-chan *gocv.Mat) {
 	var err error
 
 	// Do not try to restart the video when it is already running.
 	if vid.Recording {
-		l.Error("camera already recording")
+		log.Error().Msg("camera already recording")
 		return nil
 	}
 
@@ -160,7 +167,7 @@ func (vid *VideoPlayer) StreamVideo(devstr string) (frames <-chan *gocv.Mat) {
 	frameQ := make(chan *gocv.Mat)
 
 	defer log.Info().
-		Str("cameraid", config.Camstr).
+		Str("cameraid", vid.Camstr).
 		Bool("recording", vid.Recording).
 		Msg("Stop StreamVideo")
 
@@ -169,21 +176,19 @@ func (vid *VideoPlayer) StreamVideo(devstr string) (frames <-chan *gocv.Mat) {
 	go func() {
 		var cam *gocv.VideoCapture
 
-		camstr := GetCamstr(config.Camstr)
+		camstr := GetCamstr(vid.Camstr)
 		defer log.Info().
 			Str("camstr", camstr).
 			Msg("Opening VideoCapture")
 
-		// straight up 0
-		//cam, err = gocv.OpenVideoCapture(camstr)
-		cam, err = gocv.OpenVideoCapture(0)
+		cam, err = gocv.OpenVideoCapture(camstr)
 		if err != nil {
 			log.Fatal().Msg("failed to open video capture device")
 			return
 		}
 		defer cam.Close()
 
-		l.Info("Camera streaming  ...")
+		log.Info().Msg("Camera streaming  ...")
 
 		// Only a single static image will be in the system at a given time.
 		img := gocv.NewMat()
@@ -197,7 +202,7 @@ func (vid *VideoPlayer) StreamVideo(devstr string) (frames <-chan *gocv.Mat) {
 
 			// read a single raw image from the cam.
 			if ok := cam.Read(&img); !ok {
-				l.Info("device closed, turn recording off")
+				log.Info().Msg("device closed, turn recording off")
 				vid.Recording = false
 			}
 
@@ -213,6 +218,17 @@ func (vid *VideoPlayer) StreamVideo(devstr string) (frames <-chan *gocv.Mat) {
 
 	// return the frame channel, our caller will pass it to the reader
 	return frameQ
+}
+
+// StopVideo shuts the sensor down and turns
+func (vid *VideoPlayer) StopVideo() {
+	defer log.Info().
+		Str("cameraid", config.Camstr).
+		Bool("recording", vid.Recording).
+		Msg("Stop StreamVideo")
+
+	// Need to sync around this recording video (or can we use a channel)
+	vid.Recording = false
 }
 
 // GetCamstr returns a string that OpenCV understands depending on the

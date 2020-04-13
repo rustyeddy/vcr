@@ -1,6 +1,6 @@
-all: plugins build
+all: plugins redeye
 
-build:
+redeye: *.go
 	go build -v
 
 rpi:

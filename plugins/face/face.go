@@ -56,7 +56,8 @@ func (f *FacePipeline) LoadClassifier() (err error) {
 
 // FaceDetector takes in an image and finds a Face.
 func (f *FacePipeline) Send(img *gocv.Mat) *gocv.Mat {
-	// detect faces
+	// detect facesa
+
 	rects := f.CascadeClassifier.DetectMultiScale(*img)
 
 	// draw a rectangle around each face on the original image,

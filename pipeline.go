@@ -28,6 +28,14 @@ type VideoPipe struct {
 	Next    VideoPipeline // try using this!!
 }
 
+var (
+	pipelines map[string]VideoPipeline
+)
+
+func init() {
+	pipelines = make(map[string]VideoPipeline)
+}
+
 // NewVideoPipe will create a new image Q to recieve upstream
 // images, if the Process method is not nil, then the frame will
 // go through the corresponding processing.
@@ -107,6 +115,10 @@ func GetPipeline(fname string) (p VideoPipeline, err error) {
 		return nil, err
 	}
 	p = sym.(VideoPipeline)
+
+	// Run setup
+	p.Setup()
+
 	pipelines[fname] = p
 	return p, nil
 }

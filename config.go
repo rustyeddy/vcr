@@ -2,8 +2,6 @@ package main
 
 import (
 	"flag"
-
-	"github.com/apex/log"
 )
 
 // Configuration structure for our camera software
@@ -33,37 +31,25 @@ type Configuration struct {
 	XMLFile    string `json:"xmlfile"`
 }
 
-// GetConfig returns the one true Configuration with defaults set and command line
-// flags ready to fly.
-func GetConfig() *Configuration {
-	var c Configuration
-	flag.StringVar(&c.Addr, "address", "0.0.0.0:8888", "web address default 0.0.0.0:8888")
-	flag.StringVar(&c.MQTT, "mqtt", "tcp://10.24.10.10:1883", "mqtt broker address def tcp://10.24.10.10:1883")
-	flag.StringVar(&c.StaticPath, "pub", "./pub", "Application root dir")
-	flag.StringVar(&c.IndexPath, "index", "index.html", "index file")
-	flag.StringVar(&c.Name, "name", "redeye", "Application Name")
-	flag.StringVar(&c.Camstr, "camstr", "0", "Camera ID")
-	flag.StringVar(&c.ConfigFile, "config", "redeye.json", "Config file: redeye.json")
-	flag.StringVar(&c.Loglevel, "loglevel", "info", "default log level is debug")
-	flag.StringVar(&c.VideoAddr, "video-addr", "0.0.0.0:8887", "web address default 0.0.0.0:8887")
-	flag.StringVar(&c.Pipeline, "pipeline", "plugins/face/face.so", "Face detect")
+var (
+	config Configuration
+)
 
-	flag.BoolVar(&c.ServeVideo, "serve-video", true, "display video on local screen if available")
-	flag.BoolVar(&c.DisplayVideo, "display-video", true, "display video on local screen if available")
+func init() {
+	flag.StringVar(&config.Addr, "address", "0.0.0.0:8888", "web address default 0.0.0.0:8888")
+	flag.StringVar(&config.MQTT, "mqtt", "tcp://10.24.10.10:1883", "mqtt broker address def tcp://10.24.10.10:1883")
+	flag.StringVar(&config.StaticPath, "pub", "./pub", "Application root dir")
+	flag.StringVar(&config.IndexPath, "index", "index.html", "index file")
+	flag.StringVar(&config.Name, "name", "redeye", "Application Name")
+	flag.StringVar(&config.Camstr, "camstr", "0", "Camera ID")
+	flag.StringVar(&config.ConfigFile, "config", "redeye.json", "Config file: redeye.json")
+	flag.StringVar(&config.Loglevel, "loglevel", "info", "default log level is debug")
+	flag.StringVar(&config.VideoAddr, "video-addr", "0.0.0.0:8887", "web address default 0.0.0.0:8887")
+	flag.StringVar(&config.Pipeline, "pipeline", "plugins/face/face.so", "Face detect")
 
-	flag.BoolVar(&c.FaceDetect, "face-detect", true, "run face detection algorithm")
-	flag.StringVar(&c.XMLFile, "xmlfile", "data/haarcascade_frontalface_alt2.xml", "XMLFile")
+	flag.BoolVar(&config.ServeVideo, "serve-video", true, "display video on local screen if available")
+	flag.BoolVar(&config.DisplayVideo, "display-video", true, "display video on local screen if available")
 
-	return &c
-}
-
-// ReadConfig reads the Configuration from a file.
-func ReadConfig(name string) (c *Configuration) {
-	log.Fatal("TODO: Write the configuration file")
-	return c
-}
-
-// SaveConfig file will save the Configuration in a file.
-func SaveConfig(name string, c *Configuration) {
-	log.Fatal("TODO: Read the configuration file")
+	flag.BoolVar(&config.FaceDetect, "face-detect", true, "run face detection algorithm")
+	flag.StringVar(&config.XMLFile, "xmlfile", "data/haarcascade_frontalface_alt2.xml", "XMLFile")
 }

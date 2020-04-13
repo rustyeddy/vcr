@@ -14,6 +14,7 @@ func init() {
 		"mac":     "0",
 		"linux":   "/dev/video0",
 		"default": "0",
+		"0":       "0",
 	}
 }
 
