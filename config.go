@@ -27,7 +27,6 @@ type Configuration struct {
 	MQTT string `json:"mqtt"`
 
 	Pipeline   string `json:"pipeline"` // name of the plugin
-	FaceDetect bool   `json:"face-detect"`
 	XMLFile    string `json:"xmlfile"`
 }
 
@@ -45,11 +44,10 @@ func init() {
 	flag.StringVar(&config.ConfigFile, "config", "redeye.json", "Config file: redeye.json")
 	flag.StringVar(&config.Loglevel, "loglevel", "info", "default log level is debug")
 	flag.StringVar(&config.VideoAddr, "video-addr", "0.0.0.0:8887", "web address default 0.0.0.0:8887")
-	flag.StringVar(&config.Pipeline, "pipeline", "plugins/face/face.so", "Face detect")
+	flag.StringVar(&config.Pipeline, "pipeline", "", "Face detect")
 
 	flag.BoolVar(&config.ServeVideo, "serve-video", true, "display video on local screen if available")
 	flag.BoolVar(&config.DisplayVideo, "display-video", true, "display video on local screen if available")
 
-	flag.BoolVar(&config.FaceDetect, "face-detect", true, "run face detection algorithm")
 	flag.StringVar(&config.XMLFile, "xmlfile", "data/haarcascade_frontalface_alt2.xml", "XMLFile")
 }

@@ -26,6 +26,7 @@ func GetMessanger() *Messanger {
 	if messanger == nil {
 		messanger = &Messanger{
 			Broker: config.MQTT,
+			Subscriptions: nil,
 		}
 	}
 	return messanger
@@ -42,6 +43,12 @@ func StartMessanger(wg *sync.WaitGroup, config *Configuration) {
 	opts.SetPingTimeout(10 * time.Second)
 
 	m.Client = mqtt.NewClient(opts)
+	if m.Client == nil {
+		// XXX should we have a connect retry?
+		log.Error().Msg("New Client Failed, no MQTT available")
+		return
+	}
+
 	if t := m.Client.Connect(); t.Wait() && t.Error() != nil {
 		m.Error = t.Error()
 		log.Error().Str("error", m.Error.Error()).Msg("Failed opening MQTT client")
@@ -64,7 +71,7 @@ func (m *Messanger) Subscribe(topic string) {
 		Msg("Start MQTT Listener")
 
 	if t := m.Client.Subscribe(topic, 0, nil); t.Wait() && t.Error() != nil {
-		log.Error().Str("error", m.Error.Error()).Msg("Failed to subscribe to mqtt socket")
+		log.Error().Str("error", t.Error().Error()).Msg("Failed to subscribe to mqtt socket")
 		return
 	}
 	log.Info().Str("topic", topic).Msg("suscribed to topic")
