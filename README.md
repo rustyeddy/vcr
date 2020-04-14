@@ -1,68 +1,93 @@
 # Redeye Smart Network Camera
 
-RedEye is *smart* IP camera software that runs on lots of inexpensive
-computers and connected cameras, pretty much anythin OpenCV runs
-on. RedEye uses OpenCV _VideoCapture_ device to read anything from a
-_network IP camera_ to an _mp4 video file_.
+RedEye is *smart* IP camera software built to run on inexpensive
+computers with connected cameras like the Raspberry Pi with a CSI
+camera. 
 
-## Overview 
+The idea is to be able to *control* a *network of cameras* providing
+various video stream(s) to _Computer Vision_ algorithms.
 
-I built _redeye_ to control cheap cameras attached to cheap
-computers, specifically the _Raspberry Pi and CSI camera_.
+## Working Features
 
+RedEye was built to _stream video over IP_ as well take control
+commands from a network client. With that in mind, RedEye was built
+with the following features:
 
-## Open Source and Inexpensive Hardware
+1. Device support is provided by OpenCV, releiving me of programming. 
+2. Stream M-JPEG files over HTTP
+7. Plugin system for configurable *Computer Vision Pipelines CVP*
+3. REST API for the Config, Control and Storage Interfaces
+4. MQTT messaging support for the above APIs
+5. Websocket support for APIs
+6. Embedded Webapp to control camera
 
-RedEye was written, originally to control a Raspberry Pi with a
-connected CSI camera, over a network. I used GOCV to build the camera
-software, by virtue of _OpenCV_ VideoCapture() Device it was trivial
-to support other platforms, such as follows:
+## Near Term Roadmap
 
-### Camera with OpenCV Support
+0. Off device video pipeline (stream to nano for CV Pipeline)
+4. Improve the CV pipeline
+1. Configurable cloud storage options
+2. OpenCV to become a plugin
+4. Stream only (M-JPEG) only support for cameras
 
-All RedEye software is built with OpenCV, which is a very large and
-powerful collection of software, quite a lot of resources go into 
-bit goes into building it and supportnig 
-
-RedEye was designed to use _plugins_ allowing a specific camera to
-only load the additional functionality it requires for a particular
-application. 
-
-This is important 
-
+## Supported Platforms
 
 + Raspberry Pi 3/4 + CSI Camera
 + Jetson Nano + CSI Camera
 + Ubuntu 19 Desktop + USB Cam (V4L)
 + Macbook Pro and Ait + Built in Camera
-+ TODO Raspberry Pi Zero (stream only)
++ TODO Windows
+
+### TODO OpenCV Plugin and Stream Only
+
++ Raspberry Pi Zero (stream only)
++ esp32 cam (st)
+
+## OpenCV Plugin and Performance
+
+RedEye is built with _OpenCV_ and hence takes advantage of the
+powerful and flexible _device support_ provided by _OpenCV_. With
+that, we get an amazing amount of power and flexibility right out of
+the box, and do not have to do too much hard work to get there.
+
+However, it does come at quite a footprint regarding memory, and the
+build time on smaller devices is _ridiculous_ by todays standards (I
+feel like a spoiled brat).
+
+The idea then is to simply have the camera stream video to the A/I
+module on another system. That requires the following to that going, 
+Computer Vision module to read streaming video from network. 
+
+That way, the smart module, can just suck the video down from a player
+that only knows how to stream the video.
 
 
-
-For list of what works and what is being worked on is in the TODO
-lsit. A brief of what currently works:
-
-### M-JPEG Stream Server
-
-Stream MJpeg from most OSs with video cam, the following have been
-tested at one point in time:
-
-+ Raspberry Pi w/CSI 
-+ Jetson Nano w/CSI
-+ Desktop Ubuntu w/USB
-+ MacOS laptop (air and pro) with builtin Cam
-- Windows (TBD)
-
-### OpenCV and Pipeline Plugins
+## OpenCV and Pipeline Plugins
 
 + Built with OpenCV
 + Video Pipeline plugins
   + Face detection
 
-### Remote Controls
+## APIs
 
-+ Play/Pause over MQTT and Websockets
-+ Configure Get configuration with REST
+### Camera Control
+
+- Play
+- Pause 
+- Snap
+
+### Camera Config
+
+- Resolution
+- Frames Per Second
+- Format
+
+### Storage
+
+- Location
+- GetClips
+- GetSnapshots
+- SaveClip
+- SaveSnapshot
 
 ## Otto Discovery
 
