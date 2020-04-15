@@ -26,8 +26,8 @@ type Configuration struct {
 
 	MQTT string `json:"mqtt"`
 
-	Pipeline   string `json:"pipeline"` // name of the plugin
-	XMLFile    string `json:"xmlfile"`
+	Pipeline string `json:"pipeline"` // name of the plugin
+	XMLFile  string `json:"xmlfile"`
 }
 
 var (
@@ -37,7 +37,7 @@ var (
 func init() {
 	flag.StringVar(&config.Addr, "address", "0.0.0.0:8888", "web address default 0.0.0.0:8888")
 	flag.StringVar(&config.MQTT, "mqtt", "tcp://10.24.10.10:1883", "mqtt broker address def tcp://10.24.10.10:1883")
-	flag.StringVar(&config.StaticPath, "pub", "./pub", "Application root dir")
+	flag.StringVar(&config.StaticPath, "gui", "gui/dist", "Run the Webapp GUI")
 	flag.StringVar(&config.IndexPath, "index", "index.html", "index file")
 	flag.StringVar(&config.Name, "name", "redeye", "Application Name")
 	flag.StringVar(&config.Camstr, "camstr", "0", "Camera ID")

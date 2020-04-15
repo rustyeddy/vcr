@@ -52,9 +52,9 @@ func StartHTTP(wg *sync.WaitGroup, config *Configuration) {
 	log.Print("New Server created")
 
 	// Startup HTTP server
-	l.WithField("addr", srv.Addr).Info("Starting HTTP Server ...")
+	log.Info().Str("addr", srv.Addr).Msg("Starting HTTP Server ...")
 	err := srv.Server.ListenAndServe()
-	l.Fatal(err.Error())
+	log.Fatal().Msg(err.Error())
 }
 
 // AddRoute allows us to dynamically add routes at runtime via a plugin

@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/apex/log"
 	"github.com/gorilla/websocket"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -46,18 +46,18 @@ func wsUpgradeHndl(w http.ResponseWriter, r *http.Request) {
 	}
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		l.Errorf("Websocket Upgrade failed %v", err)
+		log.Error().Str("error", err.Error()).Msg("Websocket Upgrade failed")
 		return
 	}
 	defer conn.Close()
 
-	l.Info("ws Upgrader starting reader")
+	log.Info().Msg("ws Upgrader starting reader")
 	go wsReader(conn)
 
-	l.Info("ws Upgrader starting writer")
+	log.Info().Msg("ws Upgrader starting writer")
 	wsWriter(conn)
 
-	l.Info("ws Upgrader leaving")
+	log.Info().Msg("ws Upgrader leaving")
 }
 
 // =============== Websocket Reader =====================================
@@ -67,21 +67,25 @@ func wsReader(conn *websocket.Conn) {
 		var err error
 
 		if err = conn.ReadJSON(&msg); err != nil {
-			l.WithError(err)
+			log.Error().Str("error", err.Error()).Msg("reading json msg")
 			return
 		}
 
-		l.WithFields(log.Fields{
-			"type": msg.T,
-			"len":  msg.L,
-			"Val":  msg.V,
-		}).Infof("ws incoming")
+		log.Info().
+			Str("type", msg.T).
+			Int("len", msg.L).
+			Str("Val", msg.V).
+			Msg("ws incoming")
+
 		switch msg.T {
 		case "ai":
 			if msg.V == "on" {
 				video.VideoPipeline, err = GetPipeline(config.Pipeline)
 				if err != nil {
-					l.WithError(err)
+					log.Error().
+						Str("error", err.Error()).
+						Str("pipeline", config.Pipeline).
+						Msg("failed to get pipeline")
 				}
 			} else if msg.V == "off" {
 				video.VideoPipeline = nil
@@ -104,18 +108,17 @@ func wsWriter(conn *websocket.Conn) {
 		select {
 		case msg := <-webQ:
 			var buf []byte
-			log.Debugf("WS Send JSON %+v", msg)
 
 			if buf, err = json.Marshal(&msg); buf == nil {
-				log.Error("WS unmarshal JSON failed")
+				log.Error().Msg("WS unmarshal JSON failed")
 				return
 			}
 
 			if err != nil {
-				log.Error("WS unmarshal JSON failed")
+				log.Error().Msg("WS unmarshal JSON failed")
 				return
 			}
-			log.Debug("Message sent ... ")
+			log.Debug().Msg("Message sent ... ")
 		}
 	}
 }

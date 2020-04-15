@@ -4,6 +4,7 @@ import (
 	"plugin"
 	"sync"
 
+	"github.com/rs/zerolog/log"
 	"gocv.io/x/gocv"
 )
 
@@ -61,16 +62,14 @@ func Setup() {
 // Listen for incoming images and send them to the frame pipeline
 func (fq *VideoPipe) Listen(done <-chan bool, wg *sync.WaitGroup) {
 	defer wg.Done()
-	l.WithField("Name", fq.Name).Info("begin listen loop")
 
 	// loop around waiting for incoming frames
 	for {
 
-		l.WithField("Name", fq.Name).Info("in loop")
 		// Wait for a new frame and check that it is ok
 		img, ok := <-fq.Q
 		if !ok {
-			l.Error("Listen channel appears to be closed")
+			log.Error().Msg("Listen channel appears to be closed")
 			return
 		}
 
@@ -90,7 +89,6 @@ func (fq *VideoPipe) Listen(done <-chan bool, wg *sync.WaitGroup) {
 // Send and Frame to the existing q, then if next exists, send it to the next.
 // next will need to turn into a queue .. (hmm a channel of channels?)
 func (fq *VideoPipe) Send(img *gocv.Mat) *gocv.Mat {
-	l.Debug("sending image")
 	fq.Q <- img
 	return img
 }
@@ -105,13 +103,13 @@ func GetPipeline(fname string) (p VideoPipeline, err error) {
 
 	pl, err := plugin.Open(fname)
 	if err != nil {
-		l.WithError(err).Error("failed to open plugin")
+		log.Error().Str("error", err.Error()).Msg("failed to open plugin")
 		return nil, err
 	}
 
 	sym, err := pl.Lookup("Pipeline")
 	if err != nil {
-		l.WithError(err).Error("Find the Pipe")
+		log.Error().Str("error", err.Error()).Msg("Find the Pipe")
 		return nil, err
 	}
 	p = sym.(VideoPipeline)

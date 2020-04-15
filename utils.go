@@ -4,27 +4,25 @@ import (
 	"net"
 	"os"
 
-	"github.com/apex/log"
+	"github.com/rs/zerolog/log"
 )
 
 func startupInfo() {
 	if !config.Debug {
 		return
 	}
-	log.Infof("config %v\n", config)
-
-	l.WithFields(log.Fields{
-		"app":      "redeye",
-		"pid":      os.Getpid(),
-		"hostname": GetHostname(),
-	}).Info("App is starting up ...")
+	log.Info().
+		Str("app", "redeye").
+		Str("pid", string(os.Getpid())).
+		Str("hostname", GetHostname()).
+		Msg("App is starting up ...")
 }
 
 // GetHostname for ourselves
 func GetHostname() (hname string) {
 	var err error
 	if hname, err = os.Hostname(); err != nil {
-		log.WithError(err).Fatal("Good bye cruel world!")
+		log.Error().Str("error", err.Error()).Msg("Good bye cruel world!")
 	}
 	return hname
 }
@@ -33,7 +31,8 @@ func GetHostname() (hname string) {
 func GetIPAddr() (addr string) {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
-		log.WithField("addr", addr).Fatal(err.Error())
+		log.Error().Str("addr", addr).Str("error", err.Error()).Msg("Failed to get IP address")
+		return
 	}
 
 	for _, a := range addrs {
