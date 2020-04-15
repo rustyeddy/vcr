@@ -20,6 +20,10 @@ type HTTPServer struct {
 
 // NewHTTPServer creates a new HTTP Server
 func NewHTTPServer(config *Configuration) (s *HTTPServer) {
+	log.Info().
+		Str("Addr", config.Addr).
+		Str("StaticPath", config.StaticPath).
+		Msg("New HTTP Server created")
 
 	// If Q is nil then the server is not running
 	s = &HTTPServer{
@@ -28,16 +32,7 @@ func NewHTTPServer(config *Configuration) (s *HTTPServer) {
 		Q:      nil,
 	}
 
-	// If the IndexPath is not equal to zero we are going to serve up
-	// our web app, time to add the file server
-	if config.StaticPath != "" {
-		s.ServeFiles("/*filepath", http.Dir("gui/dist"))
-	}
-
-	log.Info().
-		Str("Addr", config.Addr).
-		Str("StaticPath", config.StaticPath).
-		Msg("New HTTP Server created")
+	s.AddHandler("/health", Health)
 
 	return s
 }
