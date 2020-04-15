@@ -2,13 +2,19 @@ package main
 
 import (
 	"net/http/httptest"
+	"sync"
 	"testing"
 )
 
 // TestHandlers will test a few of the HTTP handlers
 func TestHandlers(t *testing.T) {
-	ts := httptest.NewServer()
+	var wg sync.WaitGroup
+	srv := NewHTTPServer(&config)
+	req := httptest.NewRequest("GET", "http://1.2.4.3", nil)
+	w := httptest.NewRecorder()
+	wg.Add(1)
+	srv.Start(&wg)
 
-	srvQ := NewHTTPServer(config)
+	Health(w, req, nil)
 
 }

@@ -33,8 +33,9 @@ type Message struct {
 	V string
 }
 
-type Websock struct {
-}
+var (
+	webQ chan interface{}
+)
 
 // ===================== Websocket =====================================
 func wsUpgradeHndl(w http.ResponseWriter, r *http.Request) {

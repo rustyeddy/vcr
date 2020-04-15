@@ -9,12 +9,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var (
-	websock    *Websock
-	controller string
-	webQ       chan interface{}
-)
-
 func main() {
 	flag.Parse()
 

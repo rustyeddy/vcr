@@ -65,7 +65,7 @@ func Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	fmt.Fprint(w, "Welcome!\n")
 }
 
-func Health(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func Health(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	resp := map[string]string{
 		"health": "ok",
 	}

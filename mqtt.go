@@ -15,7 +15,7 @@ var (
 
 // Messanger handles messages and video channels
 type Messanger struct {
-	Broker         string
+	Broker        string
 	Subscriptions []string
 
 	mqtt.Client
@@ -25,14 +25,14 @@ type Messanger struct {
 func GetMessanger() *Messanger {
 	if messanger == nil {
 		messanger = &Messanger{
-			Broker: config.MQTT,
+			Broker:        config.MQTT,
 			Subscriptions: nil,
 		}
 	}
 	return messanger
 }
 
-// StartMessanger 
+// StartMessanger
 func StartMessanger(wg *sync.WaitGroup, config *Configuration) {
 	defer wg.Done()
 
@@ -90,7 +90,6 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 	switch {
 	case strings.Compare(topic, "camera/announce") == 0:
 		// Ignore the controller
-		controller = payload
 		m.Announce()
 
 	case strings.Contains(topic, "camera/"):
