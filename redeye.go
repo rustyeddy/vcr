@@ -20,10 +20,12 @@ func main() {
 	web := NewWebServer(&config)
 	msg := NewMessanger(&config)
 	vid := NewVideoPlayer(&config)
+	fs := NewFileServer(&config)
 
 	// Start the services
 	web.Start()
 	vid.Start()
+	fs.Start()
 	msgQ := msg.Start()
 
 	// TODO Have the video player announce itself when msgQ is alive

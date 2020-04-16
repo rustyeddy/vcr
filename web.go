@@ -33,6 +33,8 @@ func NewWebServer(config *Configuration) (s *WebServer) {
 	s.AddHandler("/health", health)
 	s.AddHandler("/config", getConfig)
 
+	//	s.Router.ServeFiles("/*filepath", http.Dir(config.StaticPath))
+
 	return s
 }
 
@@ -42,7 +44,9 @@ func (s *WebServer) Start() {
 	log.Info().Msg("HTTP Server is starting")
 	go func() {
 		// Blocks unless something goes wrong
-		log.Info().Msg("\tgo routine http listen ...")
+		log.Info().
+			Str("addr", s.Addr).
+			Msg("\tgo routine http listen ...")
 		if err := http.ListenAndServe(s.Addr, s.Router); err != nil {
 			log.Error().Msg("Errored on the listen.")
 		}
