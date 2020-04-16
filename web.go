@@ -32,9 +32,6 @@ func NewWebServer(config *Configuration) (s *WebServer) {
 
 	s.AddHandler("/health", health)
 	s.AddHandler("/config", getConfig)
-
-	//	s.Router.ServeFiles("/*filepath", http.Dir(config.StaticPath))
-
 	return s
 }
 

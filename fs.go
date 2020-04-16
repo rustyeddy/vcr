@@ -30,9 +30,9 @@ func NewFileServer(config *Configuration) (fs *FileServer) {
 	})
 	fs = &FileServer{
 		Router: router,
-		Addr:   "0000:8000",
+		Addr:   ":8000",
 	}
-	fs.ServeFiles("/", http.Dir(config.StaticPath))
+	fs.ServeFiles("/*filepath", http.Dir(config.StaticPath))
 	return fs
 }
 
