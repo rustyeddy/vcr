@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"os"
-	"sync"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -17,26 +16,36 @@ func main() {
 
 	startupInfo()
 
-	srv := NewHTTPServer(&config)
-	//msg := NewMQTTServer(&config)
-	//vid := NewVideoServer(&config)
+	// Create and configure all the services
+	web := NewWebServer(&config)
+	msg := NewMessanger(&config)
+	vid := NewVideoPlayer(&config)
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-	srv.Start(&wg)
-	//msgQ := msg.Start(&wg)
-	//vidQ := vid.Start(&wg)
+	// Start the services
+	web.Start()
+	vid.Start()
+	msgQ := msg.Start()
 
-	// Ensure messanger has started, then video play
-	//go StartMessanger(&wg, &config)
-	//go StartHTTP(&wg, &config)
-	//go StartVideo(&wg, &config)
+	// TODO Have the video player announce itself when msgQ is alive
+	//
+	// If the messanger is running, subscribe to our control topic
+	// if m := GetMessanger(); m != nil {
+	// 	m.Subscribe(video.GetControlChannel())
+	// }
 
-	select {
-	case cmd := <-srv.Q:
-		log.Info().Str("cmd", cmd).Msg("command")
+	cmdQ := make(chan string)
+	var cmd string
+	for cmd != "exit" {
+		select {
+		case cmd = <-webQ:
+			log.Info().Str("cmd", cmd).Msg("webQ command")
+
+		case cmd = <-cmdQ:
+			log.Info().Str("cmd", cmd).Msg("cmdQ command")
+
+		case cmd = <-msgQ:
+			log.Info().Str("cmd", cmd).Msg("msgQ command")
+		}
 	}
-
-	wg.Wait()
 	log.Info().Msg("Good Bye.")
 }

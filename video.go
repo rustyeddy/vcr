@@ -3,15 +3,10 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"sync"
 
 	"github.com/hybridgroup/mjpeg"
 	"github.com/rs/zerolog/log"
 	"gocv.io/x/gocv"
-)
-
-var (
-	video *VideoPlayer
 )
 
 // VidePlayer will open and take control a single camera. At
@@ -34,31 +29,24 @@ type VideoPlayer struct {
 	Filename string
 }
 
-// GetVideoPlayer will create or return the video player
-func GetVideoPlayer(config *Configuration) *VideoPlayer {
-	if video == nil {
-		video = &VideoPlayer{
-			Name:     GetHostname(),
-			Addr:     GetIPAddr(),
-			Filename: "img/thumbnail.jpg",
-			Camstr:   config.Camstr,
-		} // defaults are all good
+// GetVideoPlayer will create or return the video player.
+// TODO Change this to accept a configmap
+func NewVideoPlayer(config *Configuration) (video *VideoPlayer) {
+	video = &VideoPlayer{
+		Name:     GetHostname(),
+		Addr:     GetIPAddr(),
+		Filename: "img/thumbnail.jpg", // cfgmap["thumbnail"]
+		Camstr:   config.Camstr,       // cfgmap["srcstring"]
+	} // defaults are all good
 
-		if config.Pipeline != "" {
-			video.SetPipeline(config.Pipeline)
-		}
-
-		// If the messanger is running, subscribe to our control topic
-		if m := GetMessanger(); m != nil {
-			m.Subscribe(video.GetControlChannel())
-		}
+	if config.Pipeline != "" {
+		video.SetPipeline(config.Pipeline) // cfgmap["pipeline"]
 	}
 	return video
 }
 
 // NewVideoPlayer will create a new video player with default nil set.
-func StartVideo(wg *sync.WaitGroup, config *Configuration) {
-	defer wg.Done()
+func (vid *VideoPlayer) Start() {
 
 	// Set the route for video
 	vpath := "/mjpeg"
@@ -67,10 +55,10 @@ func StartVideo(wg *sync.WaitGroup, config *Configuration) {
 		Str("path", vpath).
 		Msg("Start Video Server")
 
-	video = GetVideoPlayer(config)
-
-	video.Stream = mjpeg.NewStream()
-	http.Handle(vpath, video.Stream)
+	if vid.Stream == nil {
+		vid.Stream = mjpeg.NewStream()
+	}
+	http.Handle(vpath, vid.Stream)
 	http.ListenAndServe(config.VideoAddr, nil)
 }
 
@@ -179,7 +167,6 @@ func (vid *VideoPlayer) PumpVideo() (frames <-chan *gocv.Mat) {
 			return
 		}
 		defer cam.Close()
-
 
 		log.Info().Msg("Camera streaming  ...")
 

@@ -34,7 +34,7 @@ type Message struct {
 }
 
 var (
-	webQ chan interface{}
+	webQ chan string
 )
 
 // ===================== Websocket =====================================
@@ -80,24 +80,24 @@ func wsReader(conn *websocket.Conn) {
 
 		switch msg.T {
 		case "ai":
-			if msg.V == "on" {
-				video.VideoPipeline, err = GetPipeline(config.Pipeline)
-				if err != nil {
-					log.Error().
-						Str("error", err.Error()).
-						Str("pipeline", config.Pipeline).
-						Msg("failed to get pipeline")
-				}
-			} else if msg.V == "off" {
-				video.VideoPipeline = nil
-			}
+			// if msg.V == "on" {
+			// 	video.VideoPipeline, err = GetPipeline(config.Pipeline)
+			// 	if err != nil {
+			// 		log.Error().
+			// 			Str("error", err.Error()).
+			// 			Str("pipeline", config.Pipeline).
+			// 			Msg("failed to get pipeline")
+			// 	}
+			// } else if msg.V == "off" {
+			// 	video.VideoPipeline = nil
+			// }
 
 		case "video":
-			if msg.V == "on" || msg.V == "start" {
-				go video.StartVideo()
-			} else if msg.V == "off" || msg.V == "stop" {
-				go video.StopVideo()
-			}
+			// if msg.V == "on" || msg.V == "start" {
+			// 	go video.StartVideo()
+			// } else if msg.V == "off" || msg.V == "stop" {
+			// 	go video.StopVideo()
+			// }
 		}
 	}
 }

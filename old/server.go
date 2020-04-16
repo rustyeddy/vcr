@@ -17,6 +17,8 @@ type Server struct {
 	// including all CSS and JavaScript files.
 	*http.Server
 	*mux.Router
+
+	VideoPlayer *video
 }
 
 var (

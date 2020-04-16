@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 	"net/http/httptest"
 	"strings"
-	"sync"
 	"testing"
 
 	"github.com/rs/zerolog"
@@ -21,12 +20,10 @@ func init() {
 
 // TestHandlers will test a few of the HTTP handlers
 func TestHealth(t *testing.T) {
-	var wg sync.WaitGroup
-	srv := NewHTTPServer(&config)
+	srv := NewWebServer(&config)
 	req := httptest.NewRequest("GET", "http://1.2.4.3", nil)
 	w := httptest.NewRecorder()
-	wg.Add(1)
-	srv.Start(&wg)
+	srv.Start()
 
 	health(w, req, nil)
 	if w.Code != 200 {
@@ -46,12 +43,10 @@ func TestHealth(t *testing.T) {
 
 // TestHandlers will test a few of the HTTP handlers
 func TestConfig(t *testing.T) {
-	var wg sync.WaitGroup
-	srv := NewHTTPServer(&config)
+	srv := NewWebServer(&config)
 	req := httptest.NewRequest("GET", "http://1.2.4.3", nil)
 	w := httptest.NewRecorder()
-	wg.Add(1)
-	srv.Start(&wg)
+	srv.Start()
 
 	getConfig(w, req, nil)
 	if w.Code != 200 {
