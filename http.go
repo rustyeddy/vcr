@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"sync"
 
@@ -32,7 +31,8 @@ func NewHTTPServer(config *Configuration) (s *HTTPServer) {
 		Q:      nil,
 	}
 
-	s.AddHandler("/health", Health)
+	s.AddHandler("/health", health)
+	s.AddHandler("/api/config", getConfig)
 
 	return s
 }
@@ -61,13 +61,14 @@ func (s *HTTPServer) AddHandler(path string, f httprouter.Handle) {
 	s.GET(path, f)
 }
 
-func Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	fmt.Fprint(w, "Welcome!\n")
-}
-
-func Health(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func health(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	resp := map[string]string{
 		"health": "ok",
 	}
 	json.NewEncoder(w).Encode(resp)
+}
+
+// healthCheckHndl
+func getConfig(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	json.NewEncoder(w).Encode(config)
 }
