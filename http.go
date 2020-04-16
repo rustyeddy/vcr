@@ -32,7 +32,7 @@ func NewHTTPServer(config *Configuration) (s *HTTPServer) {
 	}
 
 	s.AddHandler("/health", health)
-	s.AddHandler("/api/config", getConfig)
+	s.AddHandler("/config", getConfig)
 
 	return s
 }
