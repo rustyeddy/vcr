@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/hybridgroup/mjpeg"
@@ -147,10 +146,7 @@ func (vid *VideoPlayer) Play() {
 			if ok = gocv.IMWrite(fname, *img); !ok {
 				log.Error().Str("filename", fname).Msg("Snapshot failed to save ")
 			}
-
-			fmt.Printf("snap requested %s .. ok: %v ", fname, ok)
 			log.Info().Str("filename", fname).Msg("Snapshot saved")
-
 			vid.SnapRequest = false
 		}
 	}
