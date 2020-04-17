@@ -46,7 +46,7 @@ func NewVideoPlayer(config *Configuration) (video *VideoPlayer) {
 }
 
 // NewVideoPlayer will create a new video player with default nil set.
-func (vid *VideoPlayer) Start() {
+func (vid *VideoPlayer) Start() (vidQ chan string) {
 
 	// Set the route for video
 	vpath := "/mjpeg"
@@ -59,7 +59,35 @@ func (vid *VideoPlayer) Start() {
 		vid.Stream = mjpeg.NewStream()
 	}
 	http.Handle(vpath, vid.Stream)
-	http.ListenAndServe(config.VideoAddr, nil)
+
+	vidQ = make(chan string)
+
+	// go func the command listener
+	go func() {
+		log.Info().Msg("Starting Video service listener")
+		for {
+			select {
+			case cmd := <-vidQ:
+				log.Info().Str("cmd", cmd).Msg("incoming video command")
+				switch cmd {
+				case "play", "on":
+					log.Info().Str("cmd", cmd).Msg("Playing Video...")
+					go vid.Play()
+
+				case "pause", "off":
+					log.Info().Str("cmd", cmd).Msg("Pausing Video...")
+					vid.Pause()
+
+				default:
+					log.Warn().Str("cmd", cmd).Msg("unknown command")
+				}
+			}
+		}
+	}()
+
+	// Now go func the MJPEG HTTP server
+	go http.ListenAndServe(config.VideoAddr, nil)
+	return vidQ
 }
 
 // GetChannel returns the unique channel name for this camera
@@ -80,7 +108,7 @@ func (vid *VideoPlayer) SetPipeline(name string) (err error) {
 
 // Start Video opens the camera (sensor) and data (vidoe) starts streaming in.
 // We will be streaming MJPEG for our initial use case.
-func (vid *VideoPlayer) StartVideo() {
+func (vid *VideoPlayer) Play() {
 	var err error
 	var buf []byte
 
@@ -194,6 +222,7 @@ func (vid *VideoPlayer) PumpVideo() (frames <-chan *gocv.Mat) {
 			// sent the frame to the frame pipeline (should we send by )
 			frameQ <- &img
 		}
+		log.Info().Bool("recording", vid.Recording).Msg("Video loop exiting ...")
 	}()
 
 	// return the frame channel, our caller will pass it to the reader
@@ -201,7 +230,7 @@ func (vid *VideoPlayer) PumpVideo() (frames <-chan *gocv.Mat) {
 }
 
 // StopVideo shuts the sensor down and turns
-func (vid *VideoPlayer) StopVideo() {
+func (vid *VideoPlayer) Pause() {
 	defer log.Info().
 		Str("cameraid", config.Camstr).
 		Bool("recording", vid.Recording).
@@ -219,4 +248,7 @@ func GetCamstr(name string) (camstr string) {
 		log.Error().Str("name", name).Msg("camstr NOT Found")
 	}
 	return camstr
+}
+
+type VideoPlayerStatus struct {
 }

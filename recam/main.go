@@ -49,26 +49,49 @@ func main() {
 		msgQ = msg.Start()
 	}
 
+	var vidQ chan string
 	if cfg["vid"] {
 		vid = NewVideoPlayer(&config)
-		vid.Start()
+		vidQ = vid.Start()
 	}
 
 	cmdQ = make(chan string)
 	var cmd string
+	var src string
+
+	// Accept incoming messages from all running services.
 	for cmd != "exit" {
+		log.Info().Msg("Command Q listening for command c.... ")
 		select {
 		case cmd = <-webQ:
-			log.Info().Str("cmd", cmd).Msg("webQ command")
+			src = "webQ"
 
 		case cmd = <-msgQ:
-			log.Info().Str("cmd", cmd).Msg("webQ command")
+			src = "msgQ"
 
 		case cmd = <-cmdQ:
-			log.Info().Str("cmd", cmd).Msg("cmdQ command")
+			src = "cmdQ"
+		}
 
-		case cmd = <-msgQ:
-			log.Info().Str("cmd", cmd).Msg("msgQ command")
+		log.Info().
+			Str("src", src).
+			Str("cmd", cmd).
+			Msg("Command Exchange Incoming")
+
+		// Send the command off to any reciever
+		switch cmd {
+		case "exit":
+			// allow it to exit the outter loop upon the next iteration
+
+		case "play", "on", "pause", "off":
+			log.Info().
+				Str("dst", "video").
+				Str("cmd", cmd).
+				Msg("forwarding message")
+			vidQ <- cmd
+
+		default:
+			log.Warn().Str("cmd", cmd).Msg("Uknown command...")
 		}
 	}
 	log.Info().Msg("Good Bye.")

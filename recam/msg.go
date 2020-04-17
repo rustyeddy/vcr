@@ -16,8 +16,6 @@ var (
 type Messanger struct {
 	Broker        string
 	Subscriptions []string
-
-	cmdQ chan string
 	mqtt.Client
 	Error error
 }
@@ -33,7 +31,6 @@ func NewMessanger(config *Configuration) *Messanger {
 
 // StartMessanger
 func (m *Messanger) Start() (q chan string) {
-	m.cmdQ = q
 	opts := mqtt.NewClientOptions().AddBroker(config.MQTT).SetClientID(config.Name)
 	opts.SetKeepAlive(2 * time.Second)
 	opts.SetDefaultPublishHandler(m.handleIncoming)
@@ -58,20 +55,25 @@ func (m *Messanger) Start() (q chan string) {
 	}
 	//m.Announce()
 
+	q = make(chan string)
 	log.Info().Msg("messanger gofuncing listener")
 	go func() {
 		for {
-			cmd := <-q
-			switch cmd {
-			case "":
-				log.Warn().Msg("cmd is empty")
-			case "exit":
-				log.Info().Msg("Exiting messanger")
-				return
+			log.Info().Msg("Waiting for message ... ")
+			select {
+			case cmd := <-q:
+				log.Info().Str("cmd", cmd).Msg("\tgot a message.")
+				switch cmd {
+				case "":
+					log.Warn().Msg("cmd is empty")
+				case "exit":
+					log.Info().Msg("Exiting messanger")
+					return
+				}
 			}
 		}
 	}()
-	return
+	return q
 }
 
 // Subscribe to the given channel
@@ -107,10 +109,8 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 	case strings.Contains(topic, "camera/"):
 		switch payload {
 
-		case "play", "on":
-			fallthrough
-		case "pause", "off":
-			//video.StopVideo() -> send message instead
+		case "pause", "off", "play", "on":
+			log.Info().Str("msg", payload).Msg("\tsending payload to cmdQ")
 			cmdQ <- payload
 			break
 
