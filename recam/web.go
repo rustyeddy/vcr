@@ -23,15 +23,29 @@ func NewWebServer(config *Configuration) (s *WebServer) {
 		Str("StaticPath", config.StaticPath).
 		Msg("New HTTP Server created")
 
+	router := httprouter.New()
+	router.GlobalOPTIONS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Access-Control-Request-Method") != "" {
+			// Set CORS headers
+			header := w.Header()
+			header.Set("Access-Control-Allow-Methods", r.Header.Get("Allow"))
+			header.Set("Access-Control-Allow-Origin", "*")
+		}
+
+		log.Info().Msg("A REST Request has been had")
+		w.WriteHeader(http.StatusNoContent)
+	})
+
 	// If Q is nil then the server is not running
 	s = &WebServer{
-		Router: httprouter.New(),
+		Router: router,
 		Addr:   config.Addr,
 		Q:      nil,
 	}
 
 	s.AddHandler("/health", health)
 	s.AddHandler("/config", getConfig)
+	s.AddHandler("/messanger", getMessanger)
 
 	return s
 }
@@ -66,4 +80,18 @@ func health(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 // healthCheckHndl
 func getConfig(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	json.NewEncoder(w).Encode(config)
+}
+
+// getMessanger
+func getMessanger(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	var status *MessangerStatus
+	if msg != nil {
+		status = msg.GetStatus()
+	} else {
+		// serve up the null entry
+		status = &MessangerStatus{
+			Broker: "DISCONNECTED",
+		}
+	}
+	json.NewEncoder(w).Encode(status)
 }

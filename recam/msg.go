@@ -22,10 +22,11 @@ type Messanger struct {
 	Error error
 }
 
+// NewMessanger creates a new mqtt messanger
 func NewMessanger(config *Configuration) *Messanger {
 	messanger = &Messanger{
 		Broker:        config.MQTT,
-		Subscriptions: nil,
+		Subscriptions: []string{"camera/control"},
 	}
 	return messanger
 }
@@ -40,11 +41,11 @@ func (m *Messanger) Start() (q chan string) {
 
 	m.Client = mqtt.NewClient(opts)
 	if m.Client == nil {
-		// XXX should we have a connect retry?
 		log.Error().Msg("New Client Failed, no MQTT available")
 		return
 	}
 
+	log.Info().Str("broker", config.MQTT).Msg("Messanger connecting to the broker")
 	if t := m.Client.Connect(); t.Wait() && t.Error() != nil {
 		m.Error = t.Error()
 		log.Error().Str("error", m.Error.Error()).Msg("Failed opening MQTT client")
@@ -52,11 +53,12 @@ func (m *Messanger) Start() (q chan string) {
 	}
 
 	for _, topic := range m.Subscriptions {
+		log.Info().Str("topic", topic).Msg("Subscribing to topic...")
 		m.Subscribe(topic)
 	}
 	//m.Announce()
 
-	// Start listening for commands to relay on channels
+	log.Info().Msg("messanger gofuncing listener")
 	go func() {
 		for {
 			cmd := <-q
@@ -88,12 +90,13 @@ func (m *Messanger) Subscribe(topic string) {
 }
 
 func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
+
 	topic := msg.Topic()
 	payload := string(msg.Payload())
 
 	log.Info().
 		Str("topic", topic).
-		Str("message", payload).
+		Str("payload", payload).
 		Msg("MQTT incoming message.")
 
 	switch {
@@ -104,13 +107,11 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 	case strings.Contains(topic, "camera/"):
 		switch payload {
 
-		case "on":
-			// TODO Create and start using TLVs, but just a string for now
-			// go video.StartVideo() -> send message instead
-			break
-
-		case "off":
+		case "play", "on":
+			fallthrough
+		case "pause", "off":
 			//video.StopVideo() -> send message instead
+			cmdQ <- payload
 			break
 
 		case "ai":
@@ -157,3 +158,22 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 // 	token := m.Client.Publish("camera/announce", 0, false, data)
 // 	token.Wait()
 // }
+
+// MessangerSstatus returns the status of the currently
+// running Messanger.
+type MessangerStatus struct {
+	Broker        string
+	Subscriptions []string
+	Connected     bool
+}
+
+// GetMessangerStatus lets the caller know what is happening
+// with the messanger.
+func (m *Messanger) GetStatus() (ms *MessangerStatus) {
+	ms = &MessangerStatus{
+		Broker:        m.Broker,
+		Subscriptions: m.Subscriptions,
+	}
+	ms.Connected = m.Client != nil
+	return ms
+}

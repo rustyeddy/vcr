@@ -9,18 +9,24 @@ import (
 )
 
 var (
-	serviceConfig map[string]bool
+	cfg map[string]bool
+	msg *Messanger
+	vid *VideoPlayer
+	web *WebServer
+
+	cmdQ chan string
 )
 
 func init() {
 
 	// TODO make these flags
-	serviceConfig = map[string]bool{
+	cfg = map[string]bool{
 		"web": true,
-		"fs":  false,
 		"msg": true,
 		"vid": true,
 	}
+
+	cmdQ = make(chan string)
 }
 
 func main() {
@@ -32,33 +38,21 @@ func main() {
 	startupInfo()
 
 	// Create and configure all the services
-	if serviceConfig["web"] {
-		web := NewWebServer(&config)
+	if cfg["web"] {
+		web = NewWebServer(&config)
 		web.Start()
 	}
 
-	if serviceConfig["fs"] {
-		fs := NewFileServer(&config)
-		fs.Start()
-	}
-
 	var msgQ chan string
-	if serviceConfig["msg"] {
-		msg := NewMessanger(&config)
+	if cfg["msg"] {
+		msg = NewMessanger(&config)
 		msgQ = msg.Start()
 	}
 
-	if serviceConfig["vid"] {
-		vid := NewVideoPlayer(&config)
+	if cfg["vid"] {
+		vid = NewVideoPlayer(&config)
 		vid.Start()
 	}
-
-	// TODO Have the video player announce itself when msgQ is alive
-	//
-	// If the messanger is running, subscribe to our control topic
-	// if m := GetMessanger(); m != nil {
-	// 	m.Subscribe(video.GetControlChannel())
-	// }
 
 	cmdQ := make(chan string)
 	var cmd string
