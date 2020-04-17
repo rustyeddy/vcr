@@ -11,10 +11,13 @@ import (
 // Return an
 type WebServer struct {
 	Addr string
-
 	*httprouter.Router
-	Q chan string
 }
+
+var (
+	successResponse = map[string]string{"success": "true"}
+	errorResponse   = map[string]string{"success": "false"}
+)
 
 // NewWebServer creates a new HTTP Server
 func NewWebServer(config *Configuration) (s *WebServer) {
@@ -40,13 +43,14 @@ func NewWebServer(config *Configuration) (s *WebServer) {
 	s = &WebServer{
 		Router: router,
 		Addr:   config.Addr,
-		Q:      nil,
 	}
 
 	s.AddHandler("/health", health)
 	s.AddHandler("/config", getConfig)
 	s.AddHandler("/messanger", getMessanger)
-
+	s.AddHandler("/video", getVideo)
+	s.AddHandler("/video/play", playVideo)
+	s.AddHandler("/video/pause", pauseVideo)
 	return s
 }
 
@@ -71,10 +75,7 @@ func (s *WebServer) AddHandler(path string, f httprouter.Handle) {
 }
 
 func health(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	resp := map[string]string{
-		"health": "ok",
-	}
-	json.NewEncoder(w).Encode(resp)
+	json.NewEncoder(w).Encode(successResponse)
 }
 
 // healthCheckHndl
@@ -94,4 +95,29 @@ func getMessanger(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		}
 	}
 	json.NewEncoder(w).Encode(status)
+}
+
+// getMessanger
+func getVideo(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	status := &VideoPlayerStatus{}
+	if vid != nil {
+		status = vid.Status()
+	}
+	json.NewEncoder(w).Encode(status)
+}
+
+// getMessanger
+func playVideo(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	if vid != nil {
+		vidQ <- "play"
+	}
+	json.NewEncoder(w).Encode(successResponse)
+}
+
+// getMessanger
+func pauseVideo(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	if vid != nil {
+		vidQ <- "pause"
+	}
+	json.NewEncoder(w).Encode(successResponse)
 }

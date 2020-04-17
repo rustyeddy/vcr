@@ -14,7 +14,9 @@ var (
 	vid *VideoPlayer
 	web *WebServer
 
-	cmdQ chan string
+	cmdQ chan string // incoming commands to cmd xchange
+	msgQ chan string // outgoing mqtt
+	vidQ chan string // control video stream
 )
 
 func init() {
@@ -43,13 +45,13 @@ func main() {
 		web.Start()
 	}
 
-	var msgQ chan string
+	msgQ = make(chan string)
 	if cfg["msg"] {
 		msg = NewMessanger(&config)
 		msgQ = msg.Start()
 	}
 
-	var vidQ chan string
+	vidQ = make(chan string)
 	if cfg["vid"] {
 		vid = NewVideoPlayer(&config)
 		vidQ = vid.Start()

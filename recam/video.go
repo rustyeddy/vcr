@@ -246,5 +246,24 @@ func GetCamstr(name string) (camstr string) {
 	return camstr
 }
 
+// VideoPlayerStatus
 type VideoPlayerStatus struct {
+	Name      string
+	Addr      string
+	Camstr    string
+	Recording bool
+	Pipeline  string
+}
+
+func (vid *VideoPlayer) Status() (status *VideoPlayerStatus) {
+	status = &VideoPlayerStatus{
+		Name:      vid.Name,
+		Addr:      vid.Addr,
+		Camstr:    vid.Camstr,
+		Recording: vid.Recording,
+	}
+	if vid.VideoPipeline != nil {
+		status.Pipeline = vid.VideoPipeline.Name()
+	}
+	return status
 }
