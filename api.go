@@ -4,12 +4,12 @@ RedEye the smart camera software.
 
 - MQTT Play and Pause Video
 
-- GET		/pi/health
+- GET		/api/health
 - GET		/api/config
 - POST|PUT	/api/config/?key=val&key=val
 
 */
-package main
+package redeye
 
 // Frame is a wrapper around the source of the frame. Specifically
 // this interface should be able to define a pretty light weight
@@ -32,17 +32,6 @@ type VideoSource interface {
 	Start() (frameQ chan Frame)
 	Stop()
 }
-
-/* Use the concrete VideoPlayer type
-// VideoPlayer loads a VideoSource then listens for commands
-// to Play, Pause and Take a Snapshot
-type VideoPlayer interface {
-	Load(vsrc VideoSource)
-	Play() (frameQ chan Frame)
-	Pause()
-	Snap()
-}
-*/
 
 // VideoSink recieves a video stream, then prepares and sends
 // the frames to their ultimate destination, which typically
