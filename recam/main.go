@@ -54,7 +54,7 @@ func main() {
 		vid.Start()
 	}
 
-	cmdQ := make(chan string)
+	cmdQ = make(chan string)
 	var cmd string
 	for cmd != "exit" {
 		select {
