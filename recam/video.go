@@ -181,7 +181,7 @@ func (vid *VideoPlayer) PumpVideo() (frames <-chan *gocv.Mat) {
 		// Open the camera (capture device)
 		var cam *gocv.VideoCapture
 		camstr := GetCamstr(vid.Camstr)
-		defer log.Info().
+		log.Info().
 			Str("camstr", camstr).
 			Msg("Opening VideoCapture")
 
