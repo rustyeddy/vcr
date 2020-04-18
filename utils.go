@@ -1,4 +1,4 @@
-package main
+package redeye
 
 import (
 	"net"
@@ -8,9 +8,6 @@ import (
 )
 
 func startupInfo() {
-	if !config.Debug {
-		return
-	}
 	log.Info().
 		Str("app", "redeye").
 		Str("pid", string(os.Getpid())).

@@ -1,4 +1,4 @@
-package main
+package redeye
 
 import (
 	"strings"
@@ -9,29 +9,43 @@ import (
 )
 
 var (
-	messanger *Messanger
+	msg *Messanger
 )
+
+func init() {
+	msg = NewMessanger(config.Get("broker"))
+}
 
 // Messanger handles messages and video channels
 type Messanger struct {
+	Name          string
 	Broker        string
 	Subscriptions []string
+
 	mqtt.Client
 	Error error
+
+	cmdQ chan string
 }
 
 // NewMessanger creates a new mqtt messanger
-func NewMessanger(config *Configuration) *Messanger {
-	messanger = &Messanger{
-		Broker:        config.MQTT,
-		Subscriptions: []string{"camera/control"},
+func NewMessanger(broker string) (m *Messanger) {
+	m = &Messanger{
+		Name:   GetHostname(),
+		Broker: broker,
 	}
-	return messanger
+
+	if m.Name == "" {
+		log.Fatal().Msg("Expected a hostname got (nil)")
+	}
+	sub := "camera/" + m.Name
+	m.Subscriptions = []string{sub}
+	return m
 }
 
 // StartMessanger
 func (m *Messanger) Start() (q chan string) {
-	opts := mqtt.NewClientOptions().AddBroker(config.MQTT).SetClientID(config.Name)
+	opts := mqtt.NewClientOptions().AddBroker(m.Broker).SetClientID(m.Name)
 	opts.SetKeepAlive(2 * time.Second)
 	opts.SetDefaultPublishHandler(m.handleIncoming)
 	opts.SetPingTimeout(10 * time.Second)
@@ -42,7 +56,7 @@ func (m *Messanger) Start() (q chan string) {
 		return
 	}
 
-	log.Info().Str("broker", config.MQTT).Msg("Messanger connecting to the broker")
+	log.Info().Str("broker", m.Broker).Msg("Messanger connecting to the broker")
 	if t := m.Client.Connect(); t.Wait() && t.Error() != nil {
 		m.Error = t.Error()
 		log.Error().Str("error", m.Error.Error()).Msg("Failed opening MQTT client")
@@ -79,7 +93,7 @@ func (m *Messanger) Start() (q chan string) {
 // Subscribe to the given channel
 func (m *Messanger) Subscribe(topic string) {
 	log.Info().
-		Str("broker", config.MQTT).
+		Str("broker", m.Broker).
 		Str("channel", topic).
 		Msg("Start MQTT Listener")
 
@@ -111,7 +125,7 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 
 		case "pause", "off", "play", "on":
 			log.Info().Str("msg", payload).Msg("\tsending payload to cmdQ")
-			cmdQ <- payload
+			m.cmdQ <- payload
 			break
 
 		case "ai":

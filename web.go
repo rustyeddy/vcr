@@ -1,4 +1,4 @@
-package main
+package redeye
 
 import (
 	"encoding/json"
@@ -15,15 +15,15 @@ type WebServer struct {
 }
 
 var (
+	server          *WebServer
 	successResponse = map[string]string{"success": "true"}
 	errorResponse   = map[string]string{"success": "false"}
 )
 
 // NewWebServer creates a new HTTP Server
-func NewWebServer(config *Configuration) (s *WebServer) {
+func NewWebServer(addr string) (s *WebServer) {
 	log.Info().
-		Str("Addr", config.Addr).
-		Str("StaticPath", config.StaticPath).
+		Str("Addr", addr).
 		Msg("New HTTP Server created")
 
 	router := httprouter.New()
@@ -42,7 +42,7 @@ func NewWebServer(config *Configuration) (s *WebServer) {
 	// If Q is nil then the server is not running
 	s = &WebServer{
 		Router: router,
-		Addr:   config.Addr,
+		Addr:   addr,
 	}
 
 	s.AddHandler("/health", health)
@@ -56,8 +56,28 @@ func NewWebServer(config *Configuration) (s *WebServer) {
 
 // Start the HTTP server, give the caller a channel back that will
 // allow the caller to communicate with this server
-func (s *WebServer) Start() {
+func (s *WebServer) Start(cmdQ chan TLV) chan TLV {
 	log.Info().Msg("HTTP Server is starting")
+
+	q := make(chan TLV)
+	go func() {
+		log.Info().Msg("Entereing the web server start listener")
+
+		var cmd TLV
+		for {
+			log.Info().Msg("\twaiting for WebServer start")
+			select {
+			case cmd = <-cmdQ:
+				log.Warn().Msg("Do something with cmdQ")
+
+			case cmd = <-q:
+				log.Warn().Msg("Do something with Q:")
+			}
+			log.Info().Str("cmd", cmd.String()).Msg("need to handle this command")
+		}
+	}()
+
+	// The gofunc the listen code
 	go func() {
 		// Blocks unless something goes wrong
 		log.Info().
@@ -67,6 +87,7 @@ func (s *WebServer) Start() {
 			log.Error().Msg("Errored on the listen.")
 		}
 	}()
+	return q
 }
 
 // AddHandler
@@ -99,25 +120,32 @@ func getMessanger(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 // getMessanger
 func getVideo(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	status := &VideoPlayerStatus{}
-	if vid != nil {
-		status = vid.Status()
-	}
-	json.NewEncoder(w).Encode(status)
+
+	/*
+		status := &VideoPlayerStatus{}
+		if vid != nil {
+			status = vid.Status()
+		}
+		json.NewEncoder(w).Encode(status)
+	*/
 }
 
 // getMessanger
 func playVideo(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	if vid != nil {
-		vidQ <- "play"
-	}
-	json.NewEncoder(w).Encode(successResponse)
+	/*
+		if vid != nil {
+			vidQ <- NewTLV(TLVPlay, 2)
+		}
+		json.NewEncoder(w).Encode(successResponse)
+	*/
 }
 
 // getMessanger
 func pauseVideo(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	if vid != nil {
-		vidQ <- "pause"
-	}
-	json.NewEncoder(w).Encode(successResponse)
+	/*
+		if vid != nil {
+			vidQ <- NewTLV(TLVPause, 2)
+		}
+		json.NewEncoder(w).Encode(successResponse)
+	*/
 }

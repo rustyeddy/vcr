@@ -18,13 +18,6 @@ RedEye the smart camera software.
 */
 package redeye
 
-// Service Interface Definition
-type Service interface {
-	Start()
-	Config()
-	Status()
-}
-
 // Frame is a wrapper around the source of the frame. Specifically
 // this interface should be able to define a pretty light weight
 // video support, unfortunantly OpenCV, as **wonderful** has it is

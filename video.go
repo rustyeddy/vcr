@@ -1,4 +1,4 @@
-package main
+package redeye
 
 import (
 	"net/http"
@@ -30,27 +30,27 @@ type VideoPlayer struct {
 
 // GetVideoPlayer will create or return the video player.
 // TODO Change this to accept a configmap
-func NewVideoPlayer(config *Configuration) (video *VideoPlayer) {
+func NewVideoPlayer(config *Settings) (video *VideoPlayer) {
 	video = &VideoPlayer{
 		Name:     GetHostname(),
 		Addr:     GetIPAddr(),
-		Filename: "img/thumbnail.jpg", // cfgmap["thumbnail"]
-		Camstr:   config.Camstr,       // cfgmap["srcstring"]
+		Filename: config.Get("thumb"),
+		Camstr:   config.Get("vidsrc"),
 	} // defaults are all good
 
-	if config.Pipeline != "" {
-		video.SetPipeline(config.Pipeline) // cfgmap["pipeline"]
+	if config.Get("pipeline") != "" {
+		video.SetPipeline(config.Get("pipeline")) // cfgmap["pipeline"]
 	}
 	return video
 }
 
 // NewVideoPlayer will create a new video player with default nil set.
-func (vid *VideoPlayer) Start() (vidQ chan string) {
+func (vid *VideoPlayer) Start(cmdQ chan string) (vidQ chan string) {
 
 	// Set the route for video
 	vpath := "/mjpeg"
 	log.Info().
-		Str("address", config.VideoAddr).
+		Str("address", config.Get("addr")).
 		Str("path", vpath).
 		Msg("Start Video Server")
 
@@ -85,7 +85,7 @@ func (vid *VideoPlayer) Start() (vidQ chan string) {
 	}()
 
 	// Now go func the MJPEG HTTP server
-	go http.ListenAndServe(config.VideoAddr, nil)
+	go http.ListenAndServe(config.Get("video-addr"), nil)
 	return vidQ
 }
 
@@ -228,7 +228,7 @@ func (vid *VideoPlayer) PumpVideo() (frames <-chan *gocv.Mat) {
 // StopVideo shuts the sensor down and turns
 func (vid *VideoPlayer) Pause() {
 	defer log.Info().
-		Str("cameraid", config.Camstr).
+		Str("cameraid", vid.Camstr).
 		Bool("recording", vid.Recording).
 		Msg("Stop StreamVideo")
 

@@ -1,4 +1,4 @@
-package main
+package redeye
 
 // The cam string is a map of strings that can be used by OpenCV to
 // open up and start recording from a camera.
