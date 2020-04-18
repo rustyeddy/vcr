@@ -2,12 +2,18 @@
 
 RedEye the smart camera software.
 
-- MQTT Play and Pause Video
++ MQTT		camera/<name>	play
++ MQTT		camera/<name>	pause
+- MQTT		camera/<name>	snap
 
-- GET		/health
-- GET		/config
-- POST|PUT	/config/?key=val&key=val
-- GET		/messanger
++ GET		/health
++ GET		/config
++ POST|PUT	/config/?key=val&key=val
++ GET		/messanger
+- GET		/video
++ PUT		/video/play
++ PUT		/video/pause
+- PUT		/video/snap
 
 */
 package redeye
