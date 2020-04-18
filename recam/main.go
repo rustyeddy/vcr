@@ -11,14 +11,14 @@ import (
 
 var (
 	config *redeye.Settings
-	msg    Service
-	vid    Service
-	web    Service
+	msg    redeye.Service
+	vid    redeye.Service
+	web    redeye.Service
 
-	cmdQ chan TLV
-	msgQ chan TLV
-	vidQ chan TLV
-	webQ chan TLV
+	cmdQ chan redeye.TLV
+	msgQ chan redeye.TLV
+	vidQ chan redeye.TLV
+	webQ chan redeye.TLV
 )
 
 func init() {
@@ -33,7 +33,7 @@ func main() {
 
 	startupInfo()
 
-	cmdQ = make(chan TLV)
+	cmdQ = make(chan redeye.TLV)
 
 	web = NewWebServer(&config)
 	webQ = web.Start(cmdQ)
@@ -44,11 +44,11 @@ func main() {
 	vid = NewVideoPlayer(&config)
 	vidQ = vid.Start(cmdQ)
 
-	var cmd TLV
+	var cmd redeye.TLV
 	var src string
 
 	// Accept incoming messages from all running services.
-	for cmd != TLVTerm {
+	for cmd != redeye.TLVTerm {
 		log.Info().Msg("Command Q listening for command c.... ")
 		select {
 		case cmd = <-webQ:
@@ -67,10 +67,10 @@ func main() {
 
 		// Send the command off to any reciever
 		switch cmd.Type() {
-		case TLVTerm:
+		case redeye.TLVTerm:
 			// allow it to exit the outter loop upon the next iteration
 
-		case TLVPlay, TLVPause:
+		case redeye.TLVPlay, redeye.TLVPause:
 			log.Info().
 				Str("dst", "video").
 				Str("cmd", cmd.Type()).
