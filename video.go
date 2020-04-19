@@ -240,7 +240,8 @@ func (vid *VideoPlayer) Pause() {
 func GetCamstr(name string) (camstr string) {
 	var ex bool
 	if camstr, ex = camstrmap[name]; !ex {
-		log.Error().Str("name", name).Msg("camstr NOT Found")
+		log.Info().Str("name", name).Msg("camstr Index NOT found, use raw string")
+		camstr = name
 	}
 	return camstr
 }
