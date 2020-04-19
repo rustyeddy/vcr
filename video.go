@@ -209,7 +209,6 @@ func (vid *VideoPlayer) PumpVideo() (frames <-chan *gocv.Mat) {
 				log.Info().Msg("device closed, turn recording off")
 				vid.Recording = false
 			}
-
 			// if the image is empty, there will be no sense continueing
 			if img.Empty() {
 				continue

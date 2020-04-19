@@ -68,14 +68,10 @@ func (s *WebServer) Start(cmdQ chan TLV) chan TLV {
 			src := ""
 			log.Info().Msg("\tWeb Server listening for internal communication.")
 			select {
-			case cmd = <-cmdQ:
-				src = "cmdQ"
-				// do something with command
 			case cmd = <-q:
-				// do something with command
 				src = "webQ"
 			}
-			log.Info().Str("cmd", cmd.Str()).Str("src", src).Msg("need to handle this command")
+			log.Info().Str("cmd", cmd.Str()).Str("src", src).Msg("Incoming command")
 		}
 	}()
 
