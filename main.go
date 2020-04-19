@@ -40,10 +40,10 @@ func main() {
 
 	startupInfo()
 
-	web = NewWebServer(config.Get("addr"))
+	web = NewWebServer(config)
 	webQ = web.Start(cmdQ)
 
-	msg = NewMessanger(config.Get("broker"))
+	msg = NewMessanger(config)
 	msgQ = msg.Start(cmdQ)
 
 	vid = NewVideoPlayer(config)

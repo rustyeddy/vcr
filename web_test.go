@@ -20,10 +20,12 @@ func init() {
 
 // TestHandlers will test a few of the HTTP handlers
 func TestHealth(t *testing.T) {
-	srv := NewWebServer(&config)
+	srv := NewWebServer(config)
 	req := httptest.NewRequest("GET", "http://1.2.4.3", nil)
 	w := httptest.NewRecorder()
-	srv.Start()
+
+	cmdQ := make(chan TLV)
+	srv.Start(cmdQ)
 
 	health(w, req, nil)
 	if w.Code != 200 {
@@ -43,10 +45,12 @@ func TestHealth(t *testing.T) {
 
 // TestHandlers will test a few of the HTTP handlers
 func TestConfig(t *testing.T) {
-	srv := NewWebServer(&config)
+	srv := NewWebServer(config)
 	req := httptest.NewRequest("GET", "http://1.2.4.3", nil)
 	w := httptest.NewRecorder()
-	srv.Start()
+
+	cmdQ := make(chan TLV)
+	srv.Start(cmdQ)
 
 	getConfig(w, req, nil)
 	if w.Code != 200 {

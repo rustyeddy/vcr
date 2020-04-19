@@ -21,10 +21,10 @@ type Messanger struct {
 }
 
 // NewMessanger creates a new mqtt messanger
-func NewMessanger(broker string) (m *Messanger) {
+func NewMessanger(config *Settings) (m *Messanger) {
 	m = &Messanger{
 		Name:   GetHostname(),
-		Broker: broker,
+		Broker: config.Get("broker"),
 	}
 
 	if m.Name == "" {

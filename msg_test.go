@@ -9,10 +9,11 @@ import (
 
 // TestHandlers will test a few of the HTTP handlers
 func TestMessanger(t *testing.T) {
-	srv := NewMessanger(&config)
+	srv := NewMessanger(config)
 	req := httptest.NewRequest("GET", "http://localhost:8888/messanger", nil)
 	w := httptest.NewRecorder()
-	srv.Start()
+	cmdQ := make(chan TLV)
+	srv.Start(cmdQ)
 
 	getConfig(w, req, nil)
 	if w.Code != 200 {

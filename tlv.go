@@ -1,5 +1,7 @@
 package main
 
+import "github.com/rs/zerolog/log"
+
 // TLV Type, Length and Value
 type TLV struct {
 	buffer []byte
@@ -11,9 +13,12 @@ type TLVCallbacks struct {
 }
 
 const (
+	// General purpose tlvs
 	TLVZero = iota
 	TLVTerm
+	TLVError
 
+	// For the Video Player
 	TLVPlay
 	TLVPause
 )
@@ -21,7 +26,7 @@ const (
 // NewTLV gets a new TLV ready to go
 func NewTLV(typ, l byte) (t TLV) {
 	if l < 2 {
-		l = 2
+		log.Fatal().Int("len", int(l)).Msg("TLV Len must be at least 2 bytes")
 	}
 	t.buffer = make([]byte, l)
 	t.buffer[0] = typ

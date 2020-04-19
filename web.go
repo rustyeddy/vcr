@@ -21,9 +21,9 @@ var (
 )
 
 // NewWebServer creates a new HTTP Server
-func NewWebServer(addr string) (s *WebServer) {
+func NewWebServer(config *Settings) (s *WebServer) {
 	log.Info().
-		Str("Addr", addr).
+		Str("Addr", config.Get("addr")).
 		Msg("New HTTP Server created")
 
 	router := httprouter.New()
@@ -42,7 +42,7 @@ func NewWebServer(addr string) (s *WebServer) {
 	// If Q is nil then the server is not running
 	s = &WebServer{
 		Router: router,
-		Addr:   addr,
+		Addr:   config.Get("addr"),
 	}
 
 	s.AddHandler("/health", health)
