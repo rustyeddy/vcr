@@ -24,6 +24,7 @@ var (
 func NewWebServer(config *Settings) (s *WebServer) {
 	log.Info().
 		Str("Addr", config.Get("addr")).
+		Str("State", "created").
 		Msg("New HTTP Server created")
 
 	router := httprouter.New()
@@ -45,6 +46,7 @@ func NewWebServer(config *Settings) (s *WebServer) {
 		Addr:   config.Get("addr"),
 	}
 
+	log.Info().Msg("Installing handlers")
 	s.AddHandler("/health", health)
 	s.AddHandler("/config", getConfig)
 	s.AddHandler("/messanger", getMessanger)
@@ -57,23 +59,23 @@ func NewWebServer(config *Settings) (s *WebServer) {
 // Start the HTTP server, give the caller a channel back that will
 // allow the caller to communicate with this server
 func (s *WebServer) Start(cmdQ chan TLV) chan TLV {
-	log.Info().Msg("HTTP Server is starting")
+	log.Info().Str("addr", s.Addr).Str("state", "start").Msg("Starting the HTTP Server...")
 
 	q := make(chan TLV)
 	go func() {
-		log.Info().Msg("Entereing the web server start listener")
-
 		var cmd TLV
 		for {
-			log.Info().Msg("\twaiting for WebServer start")
+			src := ""
+			log.Info().Msg("\tWeb Server listening for internal communication.")
 			select {
 			case cmd = <-cmdQ:
-				log.Warn().Msg("Do something with cmdQ")
-
+				src = "cmdQ"
+				// do something with command
 			case cmd = <-q:
-				log.Warn().Msg("Do something with Q:")
+				// do something with command
+				src = "webQ"
 			}
-			log.Info().Str("cmd", cmd.Str()).Msg("need to handle this command")
+			log.Info().Str("cmd", cmd.Str()).Str("src", src).Msg("need to handle this command")
 		}
 	}()
 
@@ -92,6 +94,8 @@ func (s *WebServer) Start(cmdQ chan TLV) chan TLV {
 
 // AddHandler
 func (s *WebServer) AddHandler(path string, f httprouter.Handle) {
+
+	log.Info().Str("method", "GET").Str("path", path).Msg("\thandler registered")
 	s.GET(path, f)
 }
 
@@ -120,32 +124,25 @@ func getMessanger(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 // getMessanger
 func getVideo(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-
-	/*
-		status := &VideoPlayerStatus{}
-		if vid != nil {
-			status = vid.Status()
-		}
-		json.NewEncoder(w).Encode(status)
-	*/
+	status := &VideoPlayerStatus{}
+	if vid != nil {
+		status = vid.Status()
+	}
+	json.NewEncoder(w).Encode(status)
 }
 
 // getMessanger
 func playVideo(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	/*
-		if vid != nil {
-			vidQ <- NewTLV(TLVPlay, 2)
-		}
-		json.NewEncoder(w).Encode(successResponse)
-	*/
+	if vid != nil {
+		vidQ <- NewTLV(TLVPlay, 2)
+	}
+	json.NewEncoder(w).Encode(successResponse)
 }
 
 // getMessanger
 func pauseVideo(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	/*
-		if vid != nil {
-			vidQ <- NewTLV(TLVPause, 2)
-		}
-		json.NewEncoder(w).Encode(successResponse)
-	*/
+	if vid != nil {
+		vidQ <- NewTLV(TLVPause, 2)
+	}
+	json.NewEncoder(w).Encode(successResponse)
 }

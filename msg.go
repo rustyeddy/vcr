@@ -16,8 +16,6 @@ type Messanger struct {
 
 	mqtt.Client
 	Error error
-
-	cmdQ chan string
 }
 
 // NewMessanger creates a new mqtt messanger
@@ -48,7 +46,7 @@ func (m *Messanger) Start(cmdQ chan TLV) (q chan TLV) {
 		return
 	}
 
-	log.Info().Str("broker", m.Broker).Msg("Messanger connecting to the broker")
+	log.Info().Str("broker", m.Broker).Msg("MQTT connect to the broker")
 	if t := m.Client.Connect(); t.Wait() && t.Error() != nil {
 		m.Error = t.Error()
 		log.Error().Str("error", m.Error.Error()).Msg("Failed opening MQTT client")
@@ -56,7 +54,7 @@ func (m *Messanger) Start(cmdQ chan TLV) (q chan TLV) {
 	}
 
 	for _, topic := range m.Subscriptions {
-		log.Info().Str("topic", topic).Msg("Subscribing to topic...")
+		log.Info().Str("topic", topic).Msg("MQTT Subscribe to topic...")
 		m.Subscribe(topic)
 	}
 	//m.Announce()
@@ -117,7 +115,21 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 
 		case "pause", "off", "play", "on":
 			log.Info().Str("msg", payload).Msg("\tsending payload to cmdQ")
-			m.cmdQ <- payload
+			buf := make([]byte, 2)
+			buf[1] = 2 // all our messages are two bytes!
+			switch payload {
+			case "on", "play":
+				buf[0] = TLVPlay
+			case "off", "pause":
+				buf[0] = TLVPause
+			case "snap":
+				buf[0] = TLVSnap
+			default:
+				log.Warn().Str("str", payload).Msg("Unsupported Msg Type")
+				return
+			}
+
+			cmdQ <- TLV{buf}
 			break
 
 		case "ai":

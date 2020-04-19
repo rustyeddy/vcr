@@ -21,6 +21,7 @@ const (
 	// For the Video Player
 	TLVPlay  byte = 0x4
 	TLVPause byte = 0x5
+	TLVSnap  byte = 0x5
 )
 
 // NewTLV gets a new TLV ready to go

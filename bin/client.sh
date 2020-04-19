@@ -11,8 +11,8 @@ echo -n "Getting messanger .. "
 curl http://localhost:8000/messanger
 sleep 1
 echo "Turning video on"
-mosquitto_pub -t camera/${baron} -m on
+mosquitto_pub -t camera/${camera} -m on
 sleep 1
 echo "Turning video off"
-mosquitto_pub -t camera/${baron} -m on
+mosquitto_pub -t camera/${camera} -m on
 echo "All done."
