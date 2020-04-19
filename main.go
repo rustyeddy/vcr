@@ -49,6 +49,10 @@ func main() {
 	vid = NewVideoPlayer(config)
 	vidQ = vid.Start(cmdQ)
 
+	if len(os.Args) > 1 {
+		vid.Camstr = os.Arg[1]
+	}
+
 	var src string
 	cmd := TLV{make([]byte, 2)}
 
