@@ -4,25 +4,32 @@ import (
 	"flag"
 	"os"
 
-	"github.com/redeyelab/redeye"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
 var (
-	config *redeye.Settings
-	msg    redeye.Service
-	vid    redeye.Service
-	web    redeye.Service
+	config *Settings
+	msg    *Messanger
+	vid    *VideoPlayer
+	web    *WebServer
 
-	cmdQ chan redeye.TLV
-	msgQ chan redeye.TLV
-	vidQ chan redeye.TLV
-	webQ chan redeye.TLV
+	cmdQ chan TLV
+	msgQ chan TLV
+	vidQ chan TLV
+	webQ chan TLV
 )
 
 func init() {
-	cmdQ = make(chan string)
+	cmdQ = make(chan TLV)
+	d := map[string]string{
+		"addr":       ":8000",
+		"broker":     "tcp://10.24.10.10:1883",
+		"thumb":      "img/thumbnail.jpg",
+		"vidsrc":     "0",
+		"video-addr": ":8887",
+	}
+	config = NewSettings(d)
 }
 
 func main() {
@@ -33,22 +40,20 @@ func main() {
 
 	startupInfo()
 
-	cmdQ = make(chan redeye.TLV)
-
-	web = NewWebServer(&config)
+	web = NewWebServer(config.Get("addr"))
 	webQ = web.Start(cmdQ)
 
-	msg = NewMessanger(&config)
+	msg = NewMessanger(config.Get("broker"))
 	msgQ = msg.Start(cmdQ)
 
-	vid = NewVideoPlayer(&config)
+	vid = NewVideoPlayer(config)
 	vidQ = vid.Start(cmdQ)
 
-	var cmd redeye.TLV
+	var cmd TLV
 	var src string
 
 	// Accept incoming messages from all running services.
-	for cmd != redeye.TLVTerm {
+	for cmd.Type() != TLVTerm {
 		log.Info().Msg("Command Q listening for command c.... ")
 		select {
 		case cmd = <-webQ:
@@ -58,27 +63,30 @@ func main() {
 
 		case cmd = <-cmdQ:
 			src = "cmdQ"
+
+		case cmd = <-vidQ:
+			src = "vidQ"
 		}
 
 		log.Info().
 			Str("src", src).
-			Str("cmd", cmd).
+			Str("cmd", cmd.Str()).
 			Msg("Command Exchange Incoming")
 
 		// Send the command off to any reciever
 		switch cmd.Type() {
-		case redeye.TLVTerm:
+		case TLVTerm:
 			// allow it to exit the outter loop upon the next iteration
 
-		case redeye.TLVPlay, redeye.TLVPause:
+		case TLVPlay, TLVPause:
 			log.Info().
 				Str("dst", "video").
-				Str("cmd", cmd.Type()).
+				Str("cmd", cmd.Str()).
 				Msg("forwarding message")
 			vidQ <- cmd
 
 		default:
-			log.Warn().Str("cmd", cmd).Msg("Uknown command...")
+			log.Warn().Str("cmd", cmd.Str()).Msg("Uknown command...")
 		}
 	}
 	log.Info().Msg("Good Bye.")

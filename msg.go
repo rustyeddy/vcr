@@ -1,4 +1,4 @@
-package redeye
+package main
 
 import (
 	"strings"
@@ -7,14 +7,6 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/rs/zerolog/log"
 )
-
-var (
-	msg *Messanger
-)
-
-func init() {
-	msg = NewMessanger(config.Get("broker"))
-}
 
 // Messanger handles messages and video channels
 type Messanger struct {
@@ -44,7 +36,7 @@ func NewMessanger(broker string) (m *Messanger) {
 }
 
 // StartMessanger
-func (m *Messanger) Start() (q chan string) {
+func (m *Messanger) Start(cmdQ chan TLV) (q chan TLV) {
 	opts := mqtt.NewClientOptions().AddBroker(m.Broker).SetClientID(m.Name)
 	opts.SetKeepAlive(2 * time.Second)
 	opts.SetDefaultPublishHandler(m.handleIncoming)
@@ -69,20 +61,20 @@ func (m *Messanger) Start() (q chan string) {
 	}
 	//m.Announce()
 
-	q = make(chan string)
+	q = make(chan TLV)
 	log.Info().Msg("messanger gofuncing listener")
 	go func() {
 		for {
 			log.Info().Msg("Waiting for message ... ")
 			select {
 			case cmd := <-q:
-				log.Info().Str("cmd", cmd).Msg("\tgot a message.")
-				switch cmd {
-				case "":
-					log.Warn().Msg("cmd is empty")
-				case "exit":
+				log.Info().Str("cmd", cmd.Str()).Msg("\tgot a message.")
+				switch cmd.Type() {
+				case TLVTerm:
 					log.Info().Msg("Exiting messanger")
 					return
+				default:
+					log.Error().Msg("cmd is not supported")
 				}
 			}
 		}

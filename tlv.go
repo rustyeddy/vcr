@@ -1,4 +1,4 @@
-package redeye
+package main
 
 // TLV Type, Length and Value
 type TLV struct {
@@ -50,6 +50,6 @@ func (tlv *TLV) Value() []byte {
 	return tlv.buffer[2:]
 }
 
-func (tlv *TLV) String() string {
+func (tlv *TLV) Str() string {
 	return string(tlv.buffer)
 }

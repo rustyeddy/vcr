@@ -1,4 +1,4 @@
-package redeye
+package main
 
 import (
 	"net"

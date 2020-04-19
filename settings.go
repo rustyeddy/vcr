@@ -1,24 +1,10 @@
-package redeye
+package main
 
 // Settings structure
 type Settings struct {
 	values   map[string]string
 	defaults map[string]string
 	allowNew bool
-}
-
-var (
-	config *Settings
-)
-
-func init() {
-	d := map[string]string{
-		"addr":       ":8000",
-		"video-addr": ":8887",
-		"thumb":      "img/thumbnail.jpg",
-		"vidsrc":     "0",
-	}
-	config = NewSettings(d)
 }
 
 // NewSettings accepts a map of strings as the configuration

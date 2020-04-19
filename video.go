@@ -1,4 +1,4 @@
-package redeye
+package main
 
 import (
 	"net/http"
@@ -45,7 +45,7 @@ func NewVideoPlayer(config *Settings) (video *VideoPlayer) {
 }
 
 // NewVideoPlayer will create a new video player with default nil set.
-func (vid *VideoPlayer) Start(cmdQ chan string) (vidQ chan string) {
+func (vid *VideoPlayer) Start(cmdQ chan TLV) (vidQ chan TLV) {
 
 	// Set the route for video
 	vpath := "/mjpeg"
@@ -59,7 +59,7 @@ func (vid *VideoPlayer) Start(cmdQ chan string) (vidQ chan string) {
 	}
 	http.Handle(vpath, vid.Stream)
 
-	vidQ = make(chan string)
+	vidQ = make(chan TLV)
 
 	// go func the command listener
 	go func() {
@@ -67,18 +67,18 @@ func (vid *VideoPlayer) Start(cmdQ chan string) (vidQ chan string) {
 		for {
 			select {
 			case cmd := <-vidQ:
-				log.Info().Str("cmd", cmd).Msg("incoming video command")
-				switch cmd {
-				case "play", "on":
-					log.Info().Str("cmd", cmd).Msg("Playing Video...")
+				log.Info().Str("cmd", cmd.Str()).Msg("incoming video command")
+				switch cmd.Type() {
+				case TLVPlay:
+					log.Info().Str("cmd", "play").Msg("Playing Video...")
 					go vid.Play()
 
-				case "pause", "off":
-					log.Info().Str("cmd", cmd).Msg("Pausing Video...")
+				case TLVPause:
+					log.Info().Str("cmd", "pause").Msg("Pausing Video...")
 					vid.Pause()
 
 				default:
-					log.Warn().Str("cmd", cmd).Msg("unknown command")
+					log.Warn().Str("cmd", cmd.Str()).Msg("unknown command")
 				}
 			}
 		}

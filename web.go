@@ -1,4 +1,4 @@
-package redeye
+package main
 
 import (
 	"encoding/json"
@@ -73,7 +73,7 @@ func (s *WebServer) Start(cmdQ chan TLV) chan TLV {
 			case cmd = <-q:
 				log.Warn().Msg("Do something with Q:")
 			}
-			log.Info().Str("cmd", cmd.String()).Msg("need to handle this command")
+			log.Info().Str("cmd", cmd.Str()).Msg("need to handle this command")
 		}
 	}()
 

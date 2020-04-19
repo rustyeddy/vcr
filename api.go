@@ -16,7 +16,7 @@ RedEye the smart camera software.
 - PUT		/video/snap
 
 */
-package redeye
+package main
 
 // Frame is a wrapper around the source of the frame. Specifically
 // this interface should be able to define a pretty light weight
