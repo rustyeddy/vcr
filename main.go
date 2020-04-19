@@ -49,8 +49,8 @@ func main() {
 	vid = NewVideoPlayer(config)
 	vidQ = vid.Start(cmdQ)
 
-	var cmd TLV
 	var src string
+	cmd := TLV{make([]byte, 2)}
 
 	// Accept incoming messages from all running services.
 	for cmd.Type() != TLVTerm {

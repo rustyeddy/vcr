@@ -14,13 +14,13 @@ type TLVCallbacks struct {
 
 const (
 	// General purpose tlvs
-	TLVZero = iota
-	TLVTerm
-	TLVError
+	TLVZero  byte = 0x0
+	TLVTerm  byte = 0x1
+	TLVError byte = 0x2
 
 	// For the Video Player
-	TLVPlay
-	TLVPause
+	TLVPlay  byte = 0x4
+	TLVPause byte = 0x5
 )
 
 // NewTLV gets a new TLV ready to go
@@ -36,8 +36,8 @@ func NewTLV(typ, l byte) (t TLV) {
 }
 
 // Type of TLV
-func (tlv *TLV) Type() int {
-	return int(tlv.buffer[0])
+func (tlv *TLV) Type() byte {
+	return tlv.buffer[0]
 }
 
 // Type of TLV
