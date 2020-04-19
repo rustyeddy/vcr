@@ -50,7 +50,7 @@ func main() {
 	vidQ = vid.Start(cmdQ)
 
 	if len(os.Args) > 1 {
-		vid.Camstr = os.Arg[1]
+		vid.Camstr = os.Args[1]
 	}
 
 	var src string
