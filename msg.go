@@ -8,30 +8,34 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var (
-	messanger *Messanger
-)
-
 // Messanger handles messages and video channels
 type Messanger struct {
+	Name          string
 	Broker        string
 	Subscriptions []string
+
 	mqtt.Client
 	Error error
 }
 
 // NewMessanger creates a new mqtt messanger
-func NewMessanger(config *Configuration) *Messanger {
-	messanger = &Messanger{
-		Broker:        config.MQTT,
-		Subscriptions: []string{"camera/control"},
+func NewMessanger(config *Settings) (m *Messanger) {
+	m = &Messanger{
+		Name:   GetHostname(),
+		Broker: config.Get("broker"),
 	}
-	return messanger
+
+	if m.Name == "" {
+		log.Fatal().Msg("Expected a hostname got (nil)")
+	}
+	sub := "camera/" + m.Name
+	m.Subscriptions = []string{sub}
+	return m
 }
 
 // StartMessanger
-func (m *Messanger) Start() (q chan string) {
-	opts := mqtt.NewClientOptions().AddBroker(config.MQTT).SetClientID(config.Name)
+func (m *Messanger) Start(cmdQ chan TLV) (q chan TLV) {
+	opts := mqtt.NewClientOptions().AddBroker(m.Broker).SetClientID(m.Name)
 	opts.SetKeepAlive(2 * time.Second)
 	opts.SetDefaultPublishHandler(m.handleIncoming)
 	opts.SetPingTimeout(10 * time.Second)
@@ -42,7 +46,7 @@ func (m *Messanger) Start() (q chan string) {
 		return
 	}
 
-	log.Info().Str("broker", config.MQTT).Msg("Messanger connecting to the broker")
+	log.Info().Str("broker", m.Broker).Msg("MQTT connect to the broker")
 	if t := m.Client.Connect(); t.Wait() && t.Error() != nil {
 		m.Error = t.Error()
 		log.Error().Str("error", m.Error.Error()).Msg("Failed opening MQTT client")
@@ -50,25 +54,25 @@ func (m *Messanger) Start() (q chan string) {
 	}
 
 	for _, topic := range m.Subscriptions {
-		log.Info().Str("topic", topic).Msg("Subscribing to topic...")
+		log.Info().Str("topic", topic).Msg("MQTT Subscribe to topic...")
 		m.Subscribe(topic)
 	}
 	//m.Announce()
 
-	q = make(chan string)
+	q = make(chan TLV)
 	log.Info().Msg("messanger gofuncing listener")
 	go func() {
 		for {
 			log.Info().Msg("Waiting for message ... ")
 			select {
 			case cmd := <-q:
-				log.Info().Str("cmd", cmd).Msg("\tgot a message.")
-				switch cmd {
-				case "":
-					log.Warn().Msg("cmd is empty")
-				case "exit":
+				log.Info().Str("cmd", cmd.Str()).Msg("\tgot a message.")
+				switch cmd.Type() {
+				case TLVTerm:
 					log.Info().Msg("Exiting messanger")
 					return
+				default:
+					log.Error().Msg("cmd is not supported")
 				}
 			}
 		}
@@ -79,7 +83,7 @@ func (m *Messanger) Start() (q chan string) {
 // Subscribe to the given channel
 func (m *Messanger) Subscribe(topic string) {
 	log.Info().
-		Str("broker", config.MQTT).
+		Str("broker", m.Broker).
 		Str("channel", topic).
 		Msg("Start MQTT Listener")
 
@@ -111,7 +115,21 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 
 		case "pause", "off", "play", "on":
 			log.Info().Str("msg", payload).Msg("\tsending payload to cmdQ")
-			cmdQ <- payload
+			buf := make([]byte, 2)
+			buf[1] = 2 // all our messages are two bytes!
+			switch payload {
+			case "on", "play":
+				buf[0] = TLVPlay
+			case "off", "pause":
+				buf[0] = TLVPause
+			case "snap":
+				buf[0] = TLVSnap
+			default:
+				log.Warn().Str("str", payload).Msg("Unsupported Msg Type")
+				return
+			}
+
+			cmdQ <- TLV{buf}
 			break
 
 		case "ai":

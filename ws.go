@@ -26,17 +26,6 @@ const (
 	closeGracePeriod = 10 * time.Second
 )
 
-// ===================== Websocket ===========================
-type Message struct {
-	T string
-	L int
-	V string
-}
-
-var (
-	webQ chan string
-)
-
 // ===================== Websocket =====================================
 func wsUpgradeHndl(w http.ResponseWriter, r *http.Request) {
 
@@ -64,40 +53,39 @@ func wsUpgradeHndl(w http.ResponseWriter, r *http.Request) {
 // =============== Websocket Reader =====================================
 func wsReader(conn *websocket.Conn) {
 	for {
-		var msg Message = Message{}
 		var err error
+		var tlv TLV
 
-		if err = conn.ReadJSON(&msg); err != nil {
+		tlv.buffer = make([]byte, 256)
+		if err = conn.ReadJSON(&tlv); err != nil {
 			log.Error().Str("error", err.Error()).Msg("reading json msg")
 			return
 		}
 
 		log.Info().
-			Str("type", msg.T).
-			Int("len", msg.L).
-			Str("Val", msg.V).
+			Str("tlv", tlv.Str()).
 			Msg("ws incoming")
 
-		switch msg.T {
-		case "ai":
-			// if msg.V == "on" {
-			// 	video.VideoPipeline, err = GetPipeline(config.Pipeline)
-			// 	if err != nil {
-			// 		log.Error().
-			// 			Str("error", err.Error()).
-			// 			Str("pipeline", config.Pipeline).
-			// 			Msg("failed to get pipeline")
-			// 	}
-			// } else if msg.V == "off" {
-			// 	video.VideoPipeline = nil
-			// }
+		switch tlv.Type() {
+		//case "ai":
+		// if msg.V == "on" {
+		// 	video.VideoPipeline, err = GetPipeline(config.Pipeline)
+		// 	if err != nil {
+		// 		log.Error().
+		// 			Str("error", err.Error()).
+		// 			Str("pipeline", config.Pipeline).
+		// 			Msg("failed to get pipeline")
+		// 	}
+		// } else if msg.V == "off" {
+		// 	video.VideoPipeline = nil
+		// }
 
-		case "video":
-			// if msg.V == "on" || msg.V == "start" {
-			// 	go video.StartVideo()
-			// } else if msg.V == "off" || msg.V == "stop" {
-			// 	go video.StopVideo()
-			// }
+		//case "video":
+		// if msg.V == "on" || msg.V == "start" {
+		// 	go video.StartVideo()
+		// } else if msg.V == "off" || msg.V == "stop" {
+		// 	go video.StopVideo()
+		// }
 		}
 	}
 }

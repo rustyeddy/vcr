@@ -30,27 +30,27 @@ type VideoPlayer struct {
 
 // GetVideoPlayer will create or return the video player.
 // TODO Change this to accept a configmap
-func NewVideoPlayer(config *Configuration) (video *VideoPlayer) {
+func NewVideoPlayer(config *Settings) (video *VideoPlayer) {
 	video = &VideoPlayer{
 		Name:     GetHostname(),
 		Addr:     GetIPAddr(),
-		Filename: "img/thumbnail.jpg", // cfgmap["thumbnail"]
-		Camstr:   config.Camstr,       // cfgmap["srcstring"]
+		Filename: config.Get("thumb"),
+		Camstr:   config.Get("vidsrc"),
 	} // defaults are all good
 
-	if config.Pipeline != "" {
-		video.SetPipeline(config.Pipeline) // cfgmap["pipeline"]
+	if config.Get("pipeline") != "" {
+		video.SetPipeline(config.Get("pipeline")) // cfgmap["pipeline"]
 	}
 	return video
 }
 
 // NewVideoPlayer will create a new video player with default nil set.
-func (vid *VideoPlayer) Start() (vidQ chan string) {
+func (vid *VideoPlayer) Start(cmdQ chan TLV) (vidQ chan TLV) {
 
 	// Set the route for video
 	vpath := "/mjpeg"
 	log.Info().
-		Str("address", config.VideoAddr).
+		Str("address", config.Get("addr")).
 		Str("path", vpath).
 		Msg("Start Video Server")
 
@@ -59,7 +59,7 @@ func (vid *VideoPlayer) Start() (vidQ chan string) {
 	}
 	http.Handle(vpath, vid.Stream)
 
-	vidQ = make(chan string)
+	vidQ = make(chan TLV)
 
 	// go func the command listener
 	go func() {
@@ -67,25 +67,25 @@ func (vid *VideoPlayer) Start() (vidQ chan string) {
 		for {
 			select {
 			case cmd := <-vidQ:
-				log.Info().Str("cmd", cmd).Msg("incoming video command")
-				switch cmd {
-				case "play", "on":
-					log.Info().Str("cmd", cmd).Msg("Playing Video...")
+				log.Info().Str("cmd", cmd.Str()).Msg("incoming video command")
+				switch cmd.Type() {
+				case TLVPlay:
+					log.Info().Str("cmd", "play").Msg("Playing Video...")
 					go vid.Play()
 
-				case "pause", "off":
-					log.Info().Str("cmd", cmd).Msg("Pausing Video...")
+				case TLVPause:
+					log.Info().Str("cmd", "pause").Msg("Pausing Video...")
 					vid.Pause()
 
 				default:
-					log.Warn().Str("cmd", cmd).Msg("unknown command")
+					log.Warn().Str("cmd", cmd.Str()).Msg("unknown command")
 				}
 			}
 		}
 	}()
 
 	// Now go func the MJPEG HTTP server
-	go http.ListenAndServe(config.VideoAddr, nil)
+	go http.ListenAndServe(config.Get("video-addr"), nil)
 	return vidQ
 }
 
@@ -209,7 +209,6 @@ func (vid *VideoPlayer) PumpVideo() (frames <-chan *gocv.Mat) {
 				log.Info().Msg("device closed, turn recording off")
 				vid.Recording = false
 			}
-
 			// if the image is empty, there will be no sense continueing
 			if img.Empty() {
 				continue
@@ -228,7 +227,7 @@ func (vid *VideoPlayer) PumpVideo() (frames <-chan *gocv.Mat) {
 // StopVideo shuts the sensor down and turns
 func (vid *VideoPlayer) Pause() {
 	defer log.Info().
-		Str("cameraid", config.Camstr).
+		Str("cameraid", vid.Camstr).
 		Bool("recording", vid.Recording).
 		Msg("Stop StreamVideo")
 
@@ -241,7 +240,8 @@ func (vid *VideoPlayer) Pause() {
 func GetCamstr(name string) (camstr string) {
 	var ex bool
 	if camstr, ex = camstrmap[name]; !ex {
-		log.Error().Str("name", name).Msg("camstr NOT Found")
+		log.Info().Str("name", name).Msg("camstr Index NOT found, use raw string")
+		camstr = name
 	}
 	return camstr
 }

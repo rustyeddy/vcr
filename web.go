@@ -15,15 +15,16 @@ type WebServer struct {
 }
 
 var (
+	server          *WebServer
 	successResponse = map[string]string{"success": "true"}
 	errorResponse   = map[string]string{"success": "false"}
 )
 
 // NewWebServer creates a new HTTP Server
-func NewWebServer(config *Configuration) (s *WebServer) {
+func NewWebServer(config *Settings) (s *WebServer) {
 	log.Info().
-		Str("Addr", config.Addr).
-		Str("StaticPath", config.StaticPath).
+		Str("Addr", config.Get("addr")).
+		Str("State", "created").
 		Msg("New HTTP Server created")
 
 	router := httprouter.New()
@@ -42,9 +43,10 @@ func NewWebServer(config *Configuration) (s *WebServer) {
 	// If Q is nil then the server is not running
 	s = &WebServer{
 		Router: router,
-		Addr:   config.Addr,
+		Addr:   config.Get("addr"),
 	}
 
+	log.Info().Msg("Installing handlers")
 	s.AddHandler("/health", health)
 	s.AddHandler("/config", getConfig)
 	s.AddHandler("/messanger", getMessanger)
@@ -56,8 +58,24 @@ func NewWebServer(config *Configuration) (s *WebServer) {
 
 // Start the HTTP server, give the caller a channel back that will
 // allow the caller to communicate with this server
-func (s *WebServer) Start() {
-	log.Info().Msg("HTTP Server is starting")
+func (s *WebServer) Start(cmdQ chan TLV) chan TLV {
+	log.Info().Str("addr", s.Addr).Str("state", "start").Msg("Starting the HTTP Server...")
+
+	q := make(chan TLV)
+	go func() {
+		var cmd TLV
+		for {
+			src := ""
+			log.Info().Msg("\tWeb Server listening for internal communication.")
+			select {
+			case cmd = <-q:
+				src = "webQ"
+			}
+			log.Info().Str("cmd", cmd.Str()).Str("src", src).Msg("Incoming command")
+		}
+	}()
+
+	// The gofunc the listen code
 	go func() {
 		// Blocks unless something goes wrong
 		log.Info().
@@ -67,10 +85,13 @@ func (s *WebServer) Start() {
 			log.Error().Msg("Errored on the listen.")
 		}
 	}()
+	return q
 }
 
 // AddHandler
 func (s *WebServer) AddHandler(path string, f httprouter.Handle) {
+
+	log.Info().Str("method", "GET").Str("path", path).Msg("\thandler registered")
 	s.GET(path, f)
 }
 
@@ -109,7 +130,7 @@ func getVideo(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 // getMessanger
 func playVideo(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	if vid != nil {
-		vidQ <- "play"
+		vidQ <- NewTLV(TLVPlay, 2)
 	}
 	json.NewEncoder(w).Encode(successResponse)
 }
@@ -117,7 +138,7 @@ func playVideo(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 // getMessanger
 func pauseVideo(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	if vid != nil {
-		vidQ <- "pause"
+		vidQ <- NewTLV(TLVPause, 2)
 	}
 	json.NewEncoder(w).Encode(successResponse)
 }
