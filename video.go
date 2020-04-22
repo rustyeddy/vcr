@@ -90,7 +90,7 @@ func (vid *VideoPlayer) Start(cmdQ chan TLV) (vidQ chan TLV) {
 }
 
 // GetChannel returns the unique channel name for this camera
-func (vid *VideoPlayer) GetAnnouncement() string {
+func (vid *VideoPlayer) GetChannelName() string {
 	return vid.Addr + ":" + vid.Name
 }
 
@@ -112,7 +112,7 @@ func (vid *VideoPlayer) Play() {
 	var buf []byte
 
 	log.Info().Msg("StartVideo Entered ... ")
-	defer log.Info().Msg(" XXX video has Finished")
+	defer log.Info().Msg("StartVideo video has exited")
 	if vid.Recording {
 		log.Warn().Msg("camera is already recording")
 		return

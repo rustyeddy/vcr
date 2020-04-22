@@ -33,19 +33,24 @@ func NewMessanger(config *Settings) (m *Messanger) {
 	return m
 }
 
-// StartMessanger
+// Start fires up our MQTT client, then subscribes the given subscription
+// list.
 func (m *Messanger) Start(cmdQ chan TLV) (q chan TLV) {
+
+	// set up the MQTT client options
 	opts := mqtt.NewClientOptions().AddBroker(m.Broker).SetClientID(m.Name)
 	opts.SetKeepAlive(2 * time.Second)
 	opts.SetDefaultPublishHandler(m.handleIncoming)
 	opts.SetPingTimeout(10 * time.Second)
 
+	// create a NewClient
 	m.Client = mqtt.NewClient(opts)
 	if m.Client == nil {
 		log.Error().Msg("New Client Failed, no MQTT available")
 		return
 	}
 
+	// Have the client connect to the broker
 	log.Info().Str("broker", m.Broker).Msg("MQTT connect to the broker")
 	if t := m.Client.Connect(); t.Wait() && t.Error() != nil {
 		m.Error = t.Error()
@@ -53,11 +58,14 @@ func (m *Messanger) Start(cmdQ chan TLV) (q chan TLV) {
 		return
 	}
 
+	// Roll through the subscription list and subscribe
 	for _, topic := range m.Subscriptions {
 		log.Info().Str("topic", topic).Msg("MQTT Subscribe to topic...")
 		m.Subscribe(topic)
 	}
-	//m.Announce()
+
+	// Announce our presence on the camera channel
+	m.Announce()
 
 	q = make(chan TLV)
 	log.Info().Msg("messanger gofuncing listener")
@@ -95,6 +103,7 @@ func (m *Messanger) Subscribe(topic string) {
 	m.Subscriptions = append(m.Subscriptions, topic)
 }
 
+// handle all incoming MQTT messages here.
 func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 
 	topic := msg.Topic()
@@ -107,8 +116,8 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 
 	switch {
 	case strings.Compare(topic, "camera/announce") == 0:
-		// Ignore the controller
-		// m.Announce()
+
+		m.Announce()
 
 	case strings.Contains(topic, "camera/"):
 		switch payload {
@@ -152,7 +161,9 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 			break
 
 		case "hello":
-			//m.Announce()
+
+			// Announce ourselves
+			m.Announce()
 			break
 
 		default:
@@ -163,19 +174,25 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 
 // TODO Move this to video ...
 // Announce ourselves to the announce channel
-// func (m *Messanger) Announce() {
-// 	data := video.GetAnnouncement()
-// 	if m.Client == nil {
-// 		log.Error().Str("function", "Announce").Msg("Expected client to be connected")
-// 	}
+func (m *Messanger) Announce() {
 
-// 	log.Info().
-// 		Str("Topic", "camera/announce").
-// 		Str("Data", data).
-// 		Msg("announcing our presence")
-// 	token := m.Client.Publish("camera/announce", 0, false, data)
-// 	token.Wait()
-// }
+	if vid == nil {
+		log.Warn().Str("func", "Announce").Msg("No video player, NOT Announcing ourselves")
+		return
+	}
+
+	data := vid.GetChannelName()
+	if m.Client == nil {
+		log.Error().Str("function", "Announce").Msg("Expected client to be connected")
+	}
+
+	log.Info().
+		Str("Topic", "camera/announce").
+		Str("Data", data).
+		Msg("announcing our presence")
+	token := m.Client.Publish("camera/announce", 0, false, data)
+	token.Wait()
+}
 
 // MessangerSstatus returns the status of the currently
 // running Messanger.
