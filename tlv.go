@@ -2,9 +2,12 @@ package main
 
 import "github.com/rs/zerolog/log"
 
-// TLV Type, Length and Value
+// TLV Type, Length, Value is just a slice of bytes
+// where the TYPE of packet is identified by tlv[0].
+// The length of the packet is in tlv[1] the remaining
+// slice tlv[2:] is the value, to be used as needed.
 type TLV struct {
-	buffer []byte
+	tlv []byte
 }
 
 type TLVCallbacks struct {
@@ -19,9 +22,12 @@ const (
 	TLVError byte = 0x2
 
 	// For the Video Player
-	TLVPlay  byte = 0x4
-	TLVPause byte = 0x5
-	TLVSnap  byte = 0x5
+	TLVPlay  byte = 0x11
+	TLVPause byte = 0x12
+	TLVSnap  byte = 0x13
+
+	// For MJPEG Server
+	TLVFrame byte = 0x21
 )
 
 // NewTLV gets a new TLV ready to go
@@ -29,33 +35,33 @@ func NewTLV(typ, l byte) (t TLV) {
 	if l < 2 {
 		log.Fatal().Int("len", int(l)).Msg("TLV Len must be at least 2 bytes")
 	}
-	t.buffer = make([]byte, l)
-	t.buffer[0] = typ
-	t.buffer[1] = l
+	t.tlv = make([]byte, l)
+	t.tlv[0] = typ
+	t.tlv[1] = l
 
 	return t
 }
 
 // Type of TLV
-func (tlv *TLV) Type() byte {
-	return tlv.buffer[0]
+func (t *TLV) Type() byte {
+	return t.tlv[0]
 }
 
 // Type of TLV
-func (tlv *TLV) Len() int {
-	return int(tlv.buffer[1])
+func (t *TLV) Len() int {
+	return int(t.tlv[1])
 }
 
 // TypeLen of TLV
-func (tlv *TLV) TypeLen() (t int, l int) {
-	return int(tlv.buffer[0]), int(tlv.buffer[1])
+func (t *TLV) TypeLen() (ty int, l int) {
+	return int(t.tlv[0]), int(t.tlv[1])
 }
 
 // Value of the TLV
-func (tlv *TLV) Value() []byte {
-	return tlv.buffer[2:]
+func (t *TLV) Value() []byte {
+	return t.tlv[2:]
 }
 
-func (tlv *TLV) Str() string {
-	return string(tlv.buffer)
+func (t *TLV) Str() string {
+	return string(t.tlv)
 }

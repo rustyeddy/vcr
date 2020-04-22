@@ -13,11 +13,14 @@ var (
 	msg    *Messanger
 	vid    *VideoPlayer
 	web    *WebServer
+	mjpg   *MJPEGServer
 
 	cmdQ chan TLV
 	msgQ chan TLV
 	vidQ chan TLV
 	webQ chan TLV
+
+	mjpgQ chan []byte // video frames
 )
 
 func init() {
@@ -39,16 +42,20 @@ func main() {
 	log.Info().Msg("Starting redeye")
 
 	startupInfo()
+	vid = NewVideoPlayer(config)
+	vidQ = vid.Start(cmdQ)
 
 	web = NewWebServer(config)
 	webQ = web.Start(cmdQ)
 
-	vid = NewVideoPlayer(config)
-	vidQ = vid.Start(cmdQ)
-
 	msg = NewMessanger(config)
 	msgQ = msg.Start(cmdQ)
 
+	mjpg = NewMJPEGServer(config)
+	mjpgQ = mjpg.Start(cmdQ)
+
+	// we have our video camera object set the camstr for this
+	// object, we will add it now.
 	if len(os.Args) > 1 {
 		vid.Camstr = os.Args[1]
 	}

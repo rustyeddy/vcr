@@ -1,9 +1,6 @@
 package main
 
 import (
-	"net/http"
-
-	"github.com/hybridgroup/mjpeg"
 	"github.com/rs/zerolog/log"
 	"gocv.io/x/gocv"
 )
@@ -16,9 +13,7 @@ type VideoPlayer struct {
 	Addr   string
 	Camstr string // String representing the camera
 
-	// Video stream and a bool if we are recording
-	*mjpeg.Stream `json:"-"` // Stream will always be available
-	Recording     bool       `json:"recording"` // XXX: mutex or channel this bool
+	Recording bool `json:"recording"` // XXX: mutex or channel this bool
 
 	// VideoPipeline filtering video. If nil, we have no filter or pipeline.
 	VideoPipeline `json:"-"`
@@ -47,18 +42,6 @@ func NewVideoPlayer(config *Settings) (video *VideoPlayer) {
 // NewVideoPlayer will create a new video player with default nil set.
 func (vid *VideoPlayer) Start(cmdQ chan TLV) (vidQ chan TLV) {
 
-	// Set the route for video
-	vpath := "/mjpeg"
-	log.Info().
-		Str("address", config.Get("addr")).
-		Str("path", vpath).
-		Msg("Start Video Server")
-
-	if vid.Stream == nil {
-		vid.Stream = mjpeg.NewStream()
-	}
-	http.Handle(vpath, vid.Stream)
-
 	vidQ = make(chan TLV)
 
 	// go func the command listener
@@ -83,9 +66,6 @@ func (vid *VideoPlayer) Start(cmdQ chan TLV) (vidQ chan TLV) {
 			}
 		}
 	}()
-
-	// Now go func the MJPEG HTTP server
-	go http.ListenAndServe(config.Get("video-addr"), nil)
 	return vidQ
 }
 
@@ -134,7 +114,8 @@ func (vid *VideoPlayer) Play() {
 			log.Fatal().Msg("Failed encoding jpg")
 		}
 
-		vid.Stream.UpdateJPEG(buf)
+		// Send the annotated buffer to the MJPEG server
+		mjpgQ <- buf
 
 		// Check to see if a nsapshot has been requested, if so then
 		// take a snapshot. TODO put this in the video pipeline
@@ -247,7 +228,7 @@ func GetCamstr(name string) (camstr string) {
 }
 
 // VideoPlayerStatus is returned by the REST api reporting
-// the status of a video player
+// the status of
 type VideoPlayerStatus struct {
 	Name      string
 	Addr      string

@@ -56,7 +56,7 @@ func wsReader(conn *websocket.Conn) {
 		var err error
 		var tlv TLV
 
-		tlv.buffer = make([]byte, 256)
+		tlv.tlv = make([]byte, 256)
 		if err = conn.ReadJSON(&tlv); err != nil {
 			log.Error().Str("error", err.Error()).Msg("reading json msg")
 			return
