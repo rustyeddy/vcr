@@ -246,7 +246,8 @@ func GetCamstr(name string) (camstr string) {
 	return camstr
 }
 
-// VideoPlayerStatus
+// VideoPlayerStatus is returned by the REST api reporting
+// the status of a video player
 type VideoPlayerStatus struct {
 	Name      string
 	Addr      string

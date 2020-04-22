@@ -43,11 +43,11 @@ func main() {
 	web = NewWebServer(config)
 	webQ = web.Start(cmdQ)
 
-	msg = NewMessanger(config)
-	msgQ = msg.Start(cmdQ)
-
 	vid = NewVideoPlayer(config)
 	vidQ = vid.Start(cmdQ)
+
+	msg = NewMessanger(config)
+	msgQ = msg.Start(cmdQ)
 
 	if len(os.Args) > 1 {
 		vid.Camstr = os.Args[1]
