@@ -34,7 +34,7 @@ func (cam *Camera) Pause() {
 }
 
 func (cam *Camera) Snap() {
-	cam.Recording = false
+	cam.Recording = true
 }
 
 // StreamVideo takes a device string, starts the video stream and
@@ -54,14 +54,15 @@ func (cam *Camera) PumpVideo() (frames <-chan *gocv.Mat) {
 
 	// Create the channel we are going to pump frames through
 	frameQ := make(chan *gocv.Mat)
-	defer log.Info().
-		Str("cameraid", cam.Camstr).
-		Bool("recording", cam.Recording).
-		Msg("Stop StreamVideo")
 
 	// go function opens the webcam and starts reading from device, coping frames
 	// to the frameQ processing channel
 	go func() {
+
+		defer log.Info().
+			Str("cameraid", cam.Camstr).
+			Bool("recording", cam.Recording).
+			Msg("Stop StreamVideo")
 
 		// Open the camera (capture device)
 		var cap *gocv.VideoCapture
