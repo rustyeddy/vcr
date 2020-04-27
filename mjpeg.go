@@ -1,4 +1,4 @@
-package main
+package redeye
 
 import (
 	"net/http"
@@ -13,11 +13,24 @@ type MJPEGServer struct {
 	Name          string
 	Addr          string
 	*mjpeg.Stream `json:"-"` // Stream will always be available
+
+	Q chan []byte
+}
+
+var (
+	mjp *MJPEGServer
+)
+
+func GetMJPEGServer() *MJPEGServer {
+	if mjp == nil {
+		mjp = NewMJPEGServer(Config)
+	}
+	return mjp
 }
 
 // NewMJPEGServer will create a new video player with default nil set.
 func NewMJPEGServer(config *Settings) (m *MJPEGServer) {
-	m = &MJPEGServer{"mjpg", ":8887", nil}
+	m = &MJPEGServer{"mjpg", ":8887", nil, make(chan []byte)}
 	return m
 }
 
@@ -28,7 +41,7 @@ func (m *MJPEGServer) Start(cmdQ chan TLV) (mpgQ chan []byte) {
 	// Set the route for video
 	mpath := "/mjpeg"
 	log.Info().
-		Str("address", config.Get("addr")).
+		Str("address", Config.Get("addr")).
 		Str("path", mpath).
 		Msg("Start Video Server")
 
@@ -53,6 +66,6 @@ func (m *MJPEGServer) Start(cmdQ chan TLV) (mpgQ chan []byte) {
 	}()
 
 	// Now go func the MJPEG HTTP server
-	go http.ListenAndServe(config.Get("video-addr"), nil)
+	go http.ListenAndServe(Config.Get("video-addr"), nil)
 	return mjpgQ
 }

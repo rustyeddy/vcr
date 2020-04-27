@@ -1,4 +1,4 @@
-package main
+package redeye
 
 import (
 	"encoding/json"
@@ -101,14 +101,14 @@ func health(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 // healthCheckHndl
 func getConfig(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	json.NewEncoder(w).Encode(config)
+	json.NewEncoder(w).Encode(Config)
 }
 
 // getMessanger
 func getMessanger(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	var status *MessangerStatus
-	if msg != nil {
-		status = msg.GetStatus()
+	if m := GetMessanger(); m != nil {
+		status = m.GetStatus()
 	} else {
 		// serve up the null entry
 		status = &MessangerStatus{
@@ -121,7 +121,7 @@ func getMessanger(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 // getMessanger
 func getVideo(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	status := &VideoPlayerStatus{}
-	if vid != nil {
+	if vid := GetVideoPlayer(); vid != nil {
 		status = vid.Status()
 	}
 	json.NewEncoder(w).Encode(status)
@@ -129,16 +129,16 @@ func getVideo(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 // getMessanger
 func playVideo(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	if vid != nil {
-		vidQ <- NewTLV(TLVPlay, 2)
+	if vid := GetVideoPlayer(); vid != nil {
+		cmdQ <- NewTLV(CMDPlay, 2)
 	}
 	json.NewEncoder(w).Encode(successResponse)
 }
 
 // getMessanger
 func pauseVideo(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	if vid != nil {
-		vidQ <- NewTLV(TLVPause, 2)
+	if v := GetVideoPlayer(); v != nil {
+		v.Pause()
 	}
 	json.NewEncoder(w).Encode(successResponse)
 }

@@ -1,4 +1,4 @@
-package main
+package redeye
 
 // Settings structure
 type Settings struct {
@@ -6,6 +6,14 @@ type Settings struct {
 	defaults map[string]string
 	allowNew bool
 }
+
+var (
+	Config *Settings = &Settings{
+		values:   make(map[string]string),
+		defaults: make(map[string]string),
+		allowNew: false,
+	}
+)
 
 // NewSettings accepts a map of strings as the configuration
 func NewSettings(defaults map[string]string) (set *Settings) {

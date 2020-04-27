@@ -1,7 +1,6 @@
-package main
+package redeye
 
 import (
-	"encoding/json"
 	"net/http"
 	"time"
 
@@ -93,21 +92,23 @@ func wsReader(conn *websocket.Conn) {
 // =============== Websocket Writer =====================================
 func wsWriter(conn *websocket.Conn) {
 	for {
-		var err error
+		//var err error
 		select {
-		case msg := <-webQ:
-			var buf []byte
+		/*
+			case msg := <-webQ:
+				var buf []byte
 
-			if buf, err = json.Marshal(&msg); buf == nil {
-				log.Error().Msg("WS unmarshal JSON failed")
-				return
-			}
+				if buf, err = json.Marshal(&msg); buf == nil {
+					log.Error().Msg("WS unmarshal JSON failed")
+					return
+				}
 
-			if err != nil {
-				log.Error().Msg("WS unmarshal JSON failed")
-				return
-			}
-			log.Debug().Msg("Message sent ... ")
+				if err != nil {
+					log.Error().Msg("WS unmarshal JSON failed")
+					return
+				}
+				log.Debug().Msg("Message sent ... ")
+		*/
 		}
 	}
 }

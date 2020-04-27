@@ -1,4 +1,6 @@
-package main
+package camera
+
+import "github.com/rs/zerolog/log"
 
 // The cam string is a map of strings that can be used by OpenCV to
 // open up and start recording from a camera.
@@ -27,4 +29,15 @@ func jetsonCamstr() string {
 		"video/x-raw, format=(string)BGR !" +
 		"appsink	"
 	return gstpipe
+}
+
+// GetCamstr returns a string that OpenCV understands depending on the
+// platform we are running on.
+func GetCamstr(name string) (camstr string) {
+	var ex bool
+	if camstr, ex = camstrmap[name]; !ex {
+		log.Info().Str("name", name).Msg("camstr Index NOT found, use raw string")
+		camstr = name
+	}
+	return camstr
 }

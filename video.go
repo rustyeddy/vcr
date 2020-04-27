@@ -1,37 +1,42 @@
-package main
+package redeye
 
 import (
+	"redeye/camera"
+
 	"github.com/rs/zerolog/log"
 	"gocv.io/x/gocv"
+)
+
+var (
+	video *VideoPlayer
 )
 
 // VidePlayer will open and take control a single camera. At
 // the moment any camera or device string that can be read
 // by OpenCV are supported. A version
 type VideoPlayer struct {
-	Name   string
-	Addr   string
-	Camstr string // String representing the camera
-
-	Recording bool `json:"recording"` // XXX: mutex or channel this bool
+	camera.Camera
 
 	// VideoPipeline filtering video. If nil, we have no filter or pipeline.
 	VideoPipeline `json:"-"`
-	SnapRequest   bool
 
-	// Storage filename or directory
-	Filename string
+	// Channel to send video on
+	Q chan TLV
+}
+
+// GetVideoPlayer
+func GetVideoPlayer() (v *VideoPlayer) {
+	if video == nil {
+		v = NewVideoPlayer(Config)
+	}
+	return v
 }
 
 // GetVideoPlayer will create or return the video player.
 // TODO Change this to accept a configmap
 func NewVideoPlayer(config *Settings) (video *VideoPlayer) {
-	video = &VideoPlayer{
-		Name:     GetHostname(),
-		Addr:     GetIPAddr(),
-		Filename: config.Get("thumb"),
-		Camstr:   config.Get("vidsrc"),
-	} // defaults are all good
+	video = &VideoPlayer{}
+	video.Camstr = config.Get("vidsrc")
 
 	if config.Get("pipeline") != "" {
 		video.SetPipeline(config.Get("pipeline")) // cfgmap["pipeline"]
@@ -40,23 +45,21 @@ func NewVideoPlayer(config *Settings) (video *VideoPlayer) {
 }
 
 // NewVideoPlayer will create a new video player with default nil set.
-func (vid *VideoPlayer) Start(cmdQ chan TLV) (vidQ chan TLV) {
-
-	vidQ = make(chan TLV)
+func (vid *VideoPlayer) Start(cmdQ chan TLV) chan TLV {
 
 	// go func the command listener
 	go func() {
 		log.Info().Msg("Starting Video service listener")
 		for {
 			select {
-			case cmd := <-vidQ:
+			case cmd := <-cmdQ:
 				log.Info().Str("cmd", cmd.Str()).Msg("incoming video command")
 				switch cmd.Type() {
-				case TLVPlay:
+				case CMDPlay:
 					log.Info().Str("cmd", "play").Msg("Playing Video...")
 					go vid.Play()
 
-				case TLVPause:
+				case CMDPause:
 					log.Info().Str("cmd", "pause").Msg("Pausing Video...")
 					vid.Pause()
 
@@ -66,17 +69,7 @@ func (vid *VideoPlayer) Start(cmdQ chan TLV) (vidQ chan TLV) {
 			}
 		}
 	}()
-	return vidQ
-}
-
-// GetChannel returns the unique channel name for this camera
-func (vid *VideoPlayer) GetChannelName() string {
-	return vid.Addr + ":" + vid.Name
-}
-
-// GetChannel returns the unique channel name for this camera
-func (vid *VideoPlayer) GetControlChannel() string {
-	return "camera/" + vid.Name
+	return vid.Q
 }
 
 // SetPipeline to be a named pipeline
@@ -114,8 +107,10 @@ func (vid *VideoPlayer) Play() {
 			log.Fatal().Msg("Failed encoding jpg")
 		}
 
+		mjp := GetMJPEGServer()
+
 		// Send the annotated buffer to the MJPEG server
-		mjpgQ <- buf
+		mjp.Q <- buf
 
 		// Check to see if a nsapshot has been requested, if so then
 		// take a snapshot. TODO put this in the video pipeline
@@ -134,77 +129,6 @@ func (vid *VideoPlayer) Play() {
 	log.Info().Msg("Stopping Video")
 }
 
-// StreamVideo takes a device string, starts the video stream and
-// starts pumping single JPEG images from the camera stream.
-//
-// TODO: Change this to Camera and create an interface that
-// is sufficient for video files and imagnes.
-func (vid *VideoPlayer) PumpVideo() (frames <-chan *gocv.Mat) {
-	var err error
-
-	// Do not try to restart the video when it is already running.
-	if vid.Recording {
-		log.Error().Msg("camera already recording")
-		return nil
-	}
-
-	// Create the channel we are going to pump frames through
-	frameQ := make(chan *gocv.Mat)
-	defer log.Info().
-		Str("cameraid", vid.Camstr).
-		Bool("recording", vid.Recording).
-		Msg("Stop StreamVideo")
-
-	// go function opens the webcam and starts reading from device, coping frames
-	// to the frameQ processing channel
-	go func() {
-
-		// Open the camera (capture device)
-		var cam *gocv.VideoCapture
-		camstr := GetCamstr(vid.Camstr)
-		log.Info().
-			Str("camstr", camstr).
-			Msg("Opening VideoCapture")
-
-		cam, err = gocv.OpenVideoCapture(camstr)
-		if err != nil {
-			log.Fatal().Msg("failed to open video capture device")
-			return
-		}
-		defer cam.Close()
-
-		log.Info().Msg("Camera streaming  ...")
-
-		// Only a single static image will be in the system at a given time.
-		img := gocv.NewMat()
-
-		// as long as vid.recording is true we will capture images and send
-		// them into the image pipeline. We may recieve a REST or MQTT request
-		// to stop recording, in that case the vid.recording will be set to
-		// false and the recording will stop.
-		vid.Recording = true
-		for vid.Recording {
-
-			// read a single raw image from the cam.
-			if ok := cam.Read(&img); !ok {
-				log.Info().Msg("device closed, turn recording off")
-				vid.Recording = false
-			}
-			// if the image is empty, there will be no sense continueing
-			if img.Empty() {
-				continue
-			}
-
-			// sent the frame to the frame pipeline (should we send by )
-			frameQ <- &img
-		}
-		log.Info().Bool("recording", vid.Recording).Msg("Video loop exiting ...")
-	}()
-
-	// return the frame channel, our caller will pass it to the reader
-	return frameQ
-}
-
 // StopVideo shuts the sensor down and turns
 func (vid *VideoPlayer) Pause() {
 	defer log.Info().
@@ -216,21 +140,9 @@ func (vid *VideoPlayer) Pause() {
 	vid.Recording = false
 }
 
-// GetCamstr returns a string that OpenCV understands depending on the
-// platform we are running on.
-func GetCamstr(name string) (camstr string) {
-	var ex bool
-	if camstr, ex = camstrmap[name]; !ex {
-		log.Info().Str("name", name).Msg("camstr Index NOT found, use raw string")
-		camstr = name
-	}
-	return camstr
-}
-
 // VideoPlayerStatus is returned by the REST api reporting
 // the status of
 type VideoPlayerStatus struct {
-	Name      string
 	Addr      string
 	Camstr    string
 	Recording bool
@@ -239,8 +151,6 @@ type VideoPlayerStatus struct {
 
 func (vid *VideoPlayer) Status() (status *VideoPlayerStatus) {
 	status = &VideoPlayerStatus{
-		Name:      vid.Name,
-		Addr:      vid.Addr,
 		Camstr:    vid.Camstr,
 		Recording: vid.Recording,
 	}

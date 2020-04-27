@@ -1,4 +1,4 @@
-package main
+package redeye
 
 import (
 	"strings"
@@ -16,6 +16,21 @@ type Messanger struct {
 
 	mqtt.Client
 	Error error
+}
+
+var (
+	messanger *Messanger
+)
+
+func GetMessanger() *Messanger {
+	if messanger == nil {
+		messanger = &Messanger{
+			Name:          "mqtt",
+			Broker:        Config.Get("mqtt-broker"),
+			Subscriptions: []string{"camera/announce"},
+		}
+	}
+	return messanger
 }
 
 // NewMessanger creates a new mqtt messanger
@@ -76,7 +91,7 @@ func (m *Messanger) Start(cmdQ chan TLV) (q chan TLV) {
 			case cmd := <-q:
 				log.Info().Str("cmd", cmd.Str()).Msg("\tgot a message.")
 				switch cmd.Type() {
-				case TLVTerm:
+				case CMDTerm:
 					log.Info().Msg("Exiting messanger")
 					return
 				default:
@@ -128,11 +143,11 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 			buf[1] = 2 // all our messages are two bytes!
 			switch payload {
 			case "on", "play":
-				buf[0] = TLVPlay
+				buf[0] = CMDPlay
 			case "off", "pause":
-				buf[0] = TLVPause
+				buf[0] = CMDPause
 			case "snap":
-				buf[0] = TLVSnap
+				buf[0] = CMDSnap
 			default:
 				log.Warn().Str("str", payload).Msg("Unsupported Msg Type")
 				return
@@ -176,12 +191,7 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 // Announce ourselves to the announce channel
 func (m *Messanger) Announce() {
 
-	if vid == nil {
-		log.Warn().Str("func", "Announce").Msg("No video player, NOT Announcing ourselves")
-		return
-	}
-
-	data := vid.GetChannelName()
+	data := "camera/" + GetHostname()
 	if m.Client == nil {
 		log.Error().Str("function", "Announce").Msg("Expected client to be connected")
 	}

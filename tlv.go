@@ -1,4 +1,4 @@
-package main
+package redeye
 
 import "github.com/rs/zerolog/log"
 
@@ -10,24 +10,37 @@ type TLV struct {
 	tlv []byte
 }
 
-type TLVCallbacks struct {
-	Type     int
-	Callback func(tlv *TLV)
+var (
+	tlvCallbacks map[byte]func(tlv TLV)
+	cmdQ         chan TLV
+)
+
+func init() {
+	cmdQ = make(chan TLV)
+	tlvCallbacks = map[byte]func(tlv TLV){
+		CMDZero:  cmdZero,
+		CMDTerm:  cmdTerm,
+		CMDError: cmdError,
+
+		CMDPlay:  cmdPlay,
+		CMDPause: cmdPause,
+		CMDSnap:  cmdSnap,
+	}
 }
 
 const (
 	// General purpose tlvs
-	TLVZero  byte = 0x0
-	TLVTerm  byte = 0x1
-	TLVError byte = 0x2
+	CMDZero  byte = 0x0
+	CMDTerm  byte = 0x1
+	CMDError byte = 0x2
 
 	// For the Video Player
-	TLVPlay  byte = 0x11
-	TLVPause byte = 0x12
-	TLVSnap  byte = 0x13
+	CMDPlay  byte = 0x11
+	CMDPause byte = 0x12
+	CMDSnap  byte = 0x13
 
 	// For MJPEG Server
-	TLVFrame byte = 0x21
+	CMDFrame byte = 0x21
 )
 
 // NewTLV gets a new TLV ready to go
@@ -64,4 +77,28 @@ func (t *TLV) Value() []byte {
 
 func (t *TLV) Str() string {
 	return string(t.tlv)
+}
+
+func cmdZero(tlv TLV) {
+	log.Warn().Msg("ADD CMD ZERO")
+}
+
+func cmdTerm(tlv TLV) {
+	log.Warn().Msg("ADD CMD ZERO")
+}
+
+func cmdError(tlv TLV) {
+	log.Warn().Msg("ADD CMD ZERO")
+}
+
+func cmdPlay(tlv TLV) {
+	video.Play()
+}
+
+func cmdPause(tlv TLV) {
+	video.Pause()
+}
+
+func cmdSnap(tlv TLV) {
+	video.Snap()
 }

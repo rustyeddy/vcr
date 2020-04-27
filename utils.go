@@ -1,4 +1,4 @@
-package main
+package redeye
 
 import (
 	"net"
@@ -6,14 +6,6 @@ import (
 
 	"github.com/rs/zerolog/log"
 )
-
-func startupInfo() {
-	log.Info().
-		Str("app", "redeye").
-		Str("pid", string(os.Getpid())).
-		Str("hostname", GetHostname()).
-		Msg("App is starting up ...")
-}
 
 // GetHostname for ourselves
 func GetHostname() (hname string) {
