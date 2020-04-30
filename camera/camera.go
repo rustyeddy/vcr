@@ -71,6 +71,8 @@ func (cam *Camera) PumpVideo() (frames <-chan *gocv.Mat) {
 			Str("camstr", camstr).
 			Msg("Opening VideoCapture")
 
+		fmt.Printf("-------------------------- CAMSTR %s\n", camstr)
+
 		cap, err = gocv.OpenVideoCapture(camstr)
 		if err != nil {
 			log.Fatal().Msg("failed to open video capture device")
@@ -95,6 +97,7 @@ func (cam *Camera) PumpVideo() (frames <-chan *gocv.Mat) {
 				log.Info().Msg("device closed, turn recording off")
 				cam.Recording = false
 			}
+
 			// if the image is empty, there will be no sense continueing
 			if img.Empty() {
 				continue

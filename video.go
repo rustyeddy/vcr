@@ -49,7 +49,7 @@ func (vid *VideoPlayer) Start(cmdQ chan TLV) chan TLV {
 
 	// go func the command listener
 	go func() {
-		log.Info().Msg("Starting Video service listener")
+		log.Info().Msg("Starting Video service listener .. ")
 		for {
 			select {
 			case cmd := <-cmdQ:

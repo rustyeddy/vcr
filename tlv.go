@@ -62,6 +62,9 @@ func (t *TLV) Type() byte {
 
 // Type of TLV
 func (t *TLV) Len() int {
+	if (t == nil || t.tlv == nil) {
+		return 0
+	}
 	return int(t.tlv[1])
 }
 
