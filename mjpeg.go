@@ -66,6 +66,9 @@ func (m *MJPEGServer) Start(cmdQ chan TLV) (mpgQ chan []byte) {
 	}()
 
 	// Now go func the MJPEG HTTP server
+	addr := Config.Get("video-addr")
+	log.Info().Str("addr", addr).Msg("Video Addr")
+
 	go http.ListenAndServe(Config.Get("video-addr"), nil)
 	return mjpgQ
 }
