@@ -1,5 +1,5 @@
 #!/bin/bash
-camera=baron
+camera=Mac.local
 
 echo -n "Getting health .. "
 curl http://localhost:8000/health

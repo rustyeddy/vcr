@@ -1,4 +1,4 @@
-package redeye
+package main
 
 import (
 	"strings"
@@ -26,7 +26,7 @@ func GetMessanger() *Messanger {
 	if messanger == nil {
 		messanger = &Messanger{
 			Name:          "mqtt",
-			Broker:        Config.Get("mqtt-broker"),
+			Broker:        config.Broker,
 			Subscriptions: []string{"camera/announce"},
 		}
 	}
@@ -34,10 +34,10 @@ func GetMessanger() *Messanger {
 }
 
 // NewMessanger creates a new mqtt messanger
-func NewMessanger(config *Settings) (m *Messanger) {
+func NewMessanger() (m *Messanger) {
 	m = &Messanger{
 		Name:   GetHostname(),
-		Broker: config.Get("broker"),
+		Broker: config.Broker,
 	}
 
 	if m.Name == "" {

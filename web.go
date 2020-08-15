@@ -1,4 +1,4 @@
-package redeye
+package main
 
 import (
 	"encoding/json"
@@ -21,38 +21,17 @@ var (
 )
 
 // NewWebServer creates a new HTTP Server
-func NewWebServer(config *Settings) (s *WebServer) {
+func NewWebServer() (s *WebServer) {
 	log.Info().
-		Str("Addr", config.Get("addr")).
+		Str("Addr", config.Addr).
 		Str("State", "created").
 		Msg("New HTTP Server created")
 
-	router := httprouter.New()
-	router.GlobalOPTIONS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Access-Control-Request-Method") != "" {
-			// Set CORS headers
-			header := w.Header()
-			header.Set("Access-Control-Allow-Methods", r.Header.Get("Allow"))
-			header.Set("Access-Control-Allow-Origin", "*")
-		}
-
-		log.Info().Msg("A REST Request has been had")
-		w.WriteHeader(http.StatusNoContent)
-	})
-
-	// If Q is nil then the server is not running
-	s = &WebServer{
-		Router: router,
-		Addr:   config.Get("addr"),
-	}
-
-	log.Info().Msg("Installing handlers")
-	s.AddHandler("/health", health)
-	s.AddHandler("/config", getConfig)
-	s.AddHandler("/messanger", getMessanger)
-	s.AddHandler("/video", getVideo)
-	s.AddHandler("/video/play", playVideo)
-	s.AddHandler("/video/pause", pauseVideo)
+	http.HandleFunc("/api/health", health)
+	http.HandleFunc("/api/messanger", getMessanger)
+	http.HandleFunc("/api/video", getVideo)
+	http.HandleFunc("/api/video/play", playVideo)
+	http.HandleFunc("/api/video/pause", pauseVideo)
 	return s
 }
 
@@ -88,24 +67,17 @@ func (s *WebServer) Start(cmdQ chan TLV) chan TLV {
 	return q
 }
 
-// AddHandler
-func (s *WebServer) AddHandler(path string, f httprouter.Handle) {
-
-	log.Info().Str("method", "GET").Str("path", path).Msg("\thandler registered")
-	s.GET(path, f)
-}
-
-func health(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func health(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(successResponse)
 }
 
 // healthCheckHndl
-func getConfig(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func getConfig(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(Config)
 }
 
 // getMessanger
-func getMessanger(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func getMessanger(w http.ResponseWriter, r *http.Request) {
 	var status *MessangerStatus
 	if m := GetMessanger(); m != nil {
 		status = m.GetStatus()
@@ -119,7 +91,7 @@ func getMessanger(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 // getMessanger
-func getVideo(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func getVideo(w http.ResponseWriter, r *http.Request) {
 	status := &VideoPlayerStatus{}
 	if vid := GetVideoPlayer(); vid != nil {
 		status = vid.Status()
@@ -128,7 +100,7 @@ func getVideo(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 // getMessanger
-func playVideo(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func playVideo(w http.ResponseWriter, r *http.Request) {
 	if vid := GetVideoPlayer(); vid != nil {
 		cmdQ <- NewTLV(CMDPlay, 2)
 	}
@@ -136,7 +108,7 @@ func playVideo(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 // getMessanger
-func pauseVideo(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func pauseVideo(w http.ResponseWriter, r *http.Request) {
 	if v := GetVideoPlayer(); v != nil {
 		v.Pause()
 	}

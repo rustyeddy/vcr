@@ -1,7 +1,7 @@
-package redeye
+package main
 
 import (
-	"redeye/camera"
+	"./camera"
 
 	"github.com/rs/zerolog/log"
 	"gocv.io/x/gocv"
@@ -27,19 +27,19 @@ type VideoPlayer struct {
 // GetVideoPlayer
 func GetVideoPlayer() (v *VideoPlayer) {
 	if video == nil {
-		v = NewVideoPlayer(Config)
+		v = NewVideoPlayer()
 	}
 	return v
 }
 
 // GetVideoPlayer will create or return the video player.
 // TODO Change this to accept a configmap
-func NewVideoPlayer(config *Settings) (video *VideoPlayer) {
+func NewVideoPlayer() (video *VideoPlayer) {
 	video = &VideoPlayer{}
-	video.Camstr = config.Get("vidsrc")
+	video.Camstr = config.Vidsrc
 
-	if config.Get("pipeline") != "" {
-		video.SetPipeline(config.Get("pipeline")) // cfgmap["pipeline"]
+	if config.Pipeline != "" {
+		video.SetPipeline(config.Pipeline)
 	}
 	return video
 }

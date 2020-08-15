@@ -4,33 +4,23 @@ import (
 	"flag"
 	"os"
 
-	"redeye"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
 var (
-	config *redeye.Settings
-	msg    *redeye.Messanger
-	vid    *redeye.VideoPlayer
-	web    *redeye.WebServer
+	msg *Messanger
+	vid *VideoPlayer
+	web *WebServer
 
-	cmdQ chan redeye.TLV
-	msgQ chan redeye.TLV
-	vidQ chan redeye.TLV
-	webQ chan redeye.TLV
+	cmdQ chan TLV
+	msgQ chan TLV
+	vidQ chan TLV
+	webQ chan TLV
 )
 
 func init() {
-	cmdQ = make(chan redeye.TLV)
-	d := map[string]string{
-		"addr":       ":8000",
-		"broker":     "tcp://10.24.10.10:1883",
-		"thumb":      "img/thumbnail.jpg",
-		"vidsrc":     "0",
-		"video-addr": ":8887",
-	}
-	config = redeye.NewSettings(d)
+	cmdQ = make(chan TLV)
 }
 
 func main() {
@@ -39,15 +29,15 @@ func main() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	log.Info().Msg("Starting redeye")
 
-	//redeye.startupInfo()
+	//startupInfo()
 
-	web = redeye.NewWebServer(config)
+	web = NewWebServer()
 	webQ = web.Start(cmdQ)
 
-	msg = redeye.NewMessanger(config)
+	msg = NewMessanger()
 	msgQ = msg.Start(cmdQ)
 
-	vid = redeye.NewVideoPlayer(config)
+	vid = NewVideoPlayer()
 	vidQ = vid.Start(cmdQ)
 
 	if len(os.Args) > 1 {
@@ -55,14 +45,16 @@ func main() {
 	}
 
 	var src string
-	var cmd redeye.TLV;
+	var cmd TLV
 
 	// Accept incoming messages from all running services.
-	for cmd.Len() == 0 || cmd.Type() != redeye.CMDTerm {
+	for cmd.Len() == 0 || cmd.Type() != CMDTerm {
+
 		log.Info().Msg("Command Q listening for command c.... ")
 		select {
 		case cmd = <-webQ:
 			src = "webQ"
+
 		case cmd = <-msgQ:
 			src = "msgQ"
 
@@ -80,10 +72,10 @@ func main() {
 
 		// Send the command off to any reciever
 		switch cmd.Type() {
-		case redeye.CMDTerm:
+		case CMDTerm:
 			// allow it to exit the outter loop upon the next iteration
 
-		case redeye.CMDPlay, redeye.CMDPause:
+		case CMDPlay, CMDPause:
 			log.Info().
 				Str("dst", "video").
 				Str("cmd", cmd.Str()).
