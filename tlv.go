@@ -28,6 +28,7 @@ func init() {
 }
 
 const (
+
 	// General purpose tlvs
 	CMDZero  byte = 0x0
 	CMDTerm  byte = 0x1

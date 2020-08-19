@@ -11,12 +11,10 @@ import (
 var (
 	msg *Messanger
 	vid *VideoPlayer
-	web *WebServer
 
 	cmdQ chan TLV
 	msgQ chan TLV
 	vidQ chan TLV
-	webQ chan TLV
 )
 
 func init() {
@@ -29,10 +27,7 @@ func main() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	log.Info().Msg("Starting redeye")
 
-	//startupInfo()
-
-	web = NewWebServer()
-	webQ = web.Start(cmdQ)
+	go web()
 
 	msg = NewMessanger()
 	msgQ = msg.Start(cmdQ)
@@ -47,14 +42,13 @@ func main() {
 	var src string
 	var cmd TLV
 
+	vidQ <- NewTLV(CMDPlay, 2)
+
 	// Accept incoming messages from all running services.
 	for cmd.Len() == 0 || cmd.Type() != CMDTerm {
 
 		log.Info().Msg("Command Q listening for command c.... ")
 		select {
-		case cmd = <-webQ:
-			src = "webQ"
-
 		case cmd = <-msgQ:
 			src = "msgQ"
 

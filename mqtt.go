@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"net/http"
 	"strings"
 	"time"
 
@@ -202,6 +204,20 @@ func (m *Messanger) Announce() {
 		Msg("announcing our presence")
 	token := m.Client.Publish("camera/announce", 0, false, data)
 	token.Wait()
+}
+
+// getMessanger
+func ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var status *MessangerStatus
+	if m := GetMessanger(); m != nil {
+		status = m.GetStatus()
+	} else {
+		// serve up the null entry
+		status = &MessangerStatus{
+			Broker: "DISCONNECTED",
+		}
+	}
+	json.NewEncoder(w).Encode(status)
 }
 
 // MessangerSstatus returns the status of the currently

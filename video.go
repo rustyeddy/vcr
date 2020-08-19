@@ -104,7 +104,7 @@ func (vid *VideoPlayer) Play() {
 		// Finalize the annotated image. XXX maybe we create a write channel?
 		buf, err = gocv.IMEncode(".jpg", *img)
 		if err != nil {
-			log.Fatal().Msg("Failed encoding jpg")
+			log.Fatal().Str("comp", "video").Msg("Failed encoding jpg")
 		}
 
 		mjp := GetMJPEGServer()

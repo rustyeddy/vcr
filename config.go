@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"io/ioutil"
+	"net/http"
 
 	"github.com/rs/zerolog/log"
 )
@@ -44,4 +45,8 @@ func (c *Configuration) Save(path string) (err error) {
 	}
 
 	return err
+}
+
+func (c *Configuration) ServeHTTP(w http.ResponseWriter) {
+	json.NewEncoder(w).Encode(config)
 }
