@@ -8,13 +8,11 @@ import (
 	"net/http"
 )
 
+// Configuration struct handles the startup and running configuration for
+// redeye vcr, includes reading and writing to file.
 type Configuration struct {
-	Addr     string `json:"addr"`
-	Broker   string `json:"broker"`
-	Pipeline string `json:"pipeline"`
-	Thumb    string `json:"thumb"`
-	Vidsrc   string `json:"vidsrc"`
-	Vidaddr  string `json:"vidaddr"`
+	Addr     string `json:"addr"` // the address we'll serve up 
+	Broker   string `json:"broker"` // MQTT broker address
 }
 
 func init() {
@@ -23,7 +21,6 @@ func init() {
 }
 
 func (c *Configuration) Save(path string) (err error) {
-
 	buf, err := json.Marshal(c)
 	if err != nil {
 		log.Println("failed to marshal JSON from configuration")
