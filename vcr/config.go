@@ -13,11 +13,13 @@ import (
 type Configuration struct {
 	Addr     string `json:"addr"` // the address we'll serve up 
 	Broker   string `json:"broker"` // MQTT broker address
+	BasePath string `json:"basepath"` // /redeye
 }
 
 func init() {
 	flag.StringVar(&config.Addr, "addr", ":8000", "Address to serve up redeye from")
-	flag.StringVar(&config.Broker, "broker", "tcp://10.24.10.10:1833", "MQTT Broker")
+	flag.StringVar(&config.Broker, "broker", "tcp://localhost:1883", "MQTT Broker")
+	flag.StringVar(&config.BasePath, "basepath", "/redeye", "BasePath for MQTT Topics and REST URL")
 }
 
 func (c *Configuration) Save(path string) (err error) {

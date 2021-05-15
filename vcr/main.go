@@ -5,12 +5,17 @@ import (
 	"log"
 	"sync"
 
-	"github.com/redeyelab/redeye/aeye"
+	//"github.com/redeyelab/redeye/aeye"
 )
 
 var (
 	config Configuration
+	cmdQ chan TLV
 )
+
+func init() {
+	// cmdQ = make(chan TLV)
+}
 
 func main() {
 	log.Println("Redeye VCR Starting...")
@@ -21,8 +26,11 @@ func main() {
 	wg.Add(1)
 	go web(wg)
 
-	var p aeye.Pipeline
-	log.Printf("pipe: %+v\n", p)
+	messanger = NewMessanger()
+	messanger.Start(cmdQ)
+
+	// var p aeye.Pipeline
+	// log.Printf("pipe: %+v\n", p)
 
 	log.Println("Waiting for web to end")
 	wg.Wait()
