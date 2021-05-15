@@ -19,7 +19,7 @@ var (
 
 // NewWebServer creates a new HTTP Server
 func web() {
-	log.Println("New HTTP Server %s created", config.Addr)
+	log.Printf("New HTTP Server %s created", config.Addr)
 
 	http.HandleFunc("/api/health", health)
 	http.HandleFunc("/api/video", getVideo)

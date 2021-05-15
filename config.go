@@ -43,10 +43,10 @@ func (c *Configuration) Save(path string) (err error) {
 		log.Error().Err(err).Msg("failed to write config JSON to file")
 		return err
 	}
-
 	return err
 }
 
+// ServeHTTP provides the Web service for the configuration module
 func (c *Configuration) ServeHTTP(w http.ResponseWriter) {
 	json.NewEncoder(w).Encode(config)
 }

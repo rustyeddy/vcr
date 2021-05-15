@@ -25,6 +25,9 @@ func main() {
 	flag.Parse()
 
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+
+	// Todo: Add log level to the start options
+	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	log.Info().Msg("Starting redeye")
 
 	go web()
