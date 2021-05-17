@@ -1,12 +1,11 @@
-package main
+package redeye
 
 import (
-	"encoding/json"
 	"log"
-	"net/http"
 	"strings"
 	"time"
-
+	"encoding/json"
+	"net/http"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
@@ -14,6 +13,7 @@ import (
 type Messanger struct {
 	Name          string
 	Broker        string
+	BasePath	  string
 	Subscriptions []string
 
 	mqtt.Client
@@ -25,34 +25,28 @@ var (
 )
 
 func GetMessanger() *Messanger {
-	if messanger == nil {
-		messanger = &Messanger{
-			Name:          "mqtt",
-			Broker:        config.Broker,
-			Subscriptions: []string{"camera/announce"},
-		}
-	}
 	return messanger
 }
 
 // NewMessanger creates a new mqtt messanger
-func NewMessanger() (m *Messanger) {
+func NewMessanger(broker, path string) (m *Messanger) {
 	m = &Messanger{
 		Name:   GetHostname(),
-		Broker: config.Broker,
+		Broker: broker,
+		BasePath: path,
 	}
 
 	if m.Name == "" {
 		log.Fatal("Expected a hostname got (nil)")
 	}
-	sub := "camera/" + m.Name
-	m.Subscriptions = []string{sub}
+	// sub := "camera/" + m.Name
+	// m.Subscriptions = []string{sub}
 	return m
 }
 
 // Start fires up our MQTT client, then subscribes the given subscription
 // list.
-func (m *Messanger) Start(cmdQ chan TLV) (q chan TLV) {
+func (m *Messanger) Start() (q chan TLV) {
 
 	// set up the MQTT client options
 	opts := mqtt.NewClientOptions().AddBroker(m.Broker).SetClientID(m.Name)
@@ -188,7 +182,7 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 func (m *Messanger) Announce() {
 
 	//data := "camera/" + GetHostname()
-	topic := config.BasePath + "/announce/controller/" + m.Name
+	topic := m.BasePath + "/announce/controller/" + m.Name
 	if m.Client == nil {
 		log.Println("function", "Announce", "Expected client to be connected")
 	}
@@ -201,7 +195,7 @@ func (m *Messanger) Announce() {
 // getMessanger
 func ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var status *MessangerStatus
-	if m := GetMessanger(); m != nil {
+	if m := messanger; m != nil {
 		status = m.GetStatus()
 	} else {
 		// serve up the null entry

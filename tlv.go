@@ -1,4 +1,4 @@
-package main
+package redeye
 
 import "log"
 
@@ -13,6 +13,7 @@ type TLV struct {
 
 var (
 	tlvCallbacks map[byte]func(tlv TLV)
+	cmdQ chan TLV
 )
 
 func init() {

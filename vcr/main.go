@@ -15,29 +15,20 @@ var (
 	cameraList []string
 
 	web *redeye.WebServer;
-	cmdQ chan TLV
 )
 
-func init() {
-	// cmdQ = make(chan TLV)
-}
-
 func main() {
-	log.Println("Redeye VCR Starting...")
-
+	log.Println("Redeye VCR Starting, parsing args...")
 	flag.Parse()
 
-	messanger = NewMessanger()
-	messanger.Start(cmdQ)
-
 	var wg sync.WaitGroup
-	wg.Add(1)
+	wg.Add(2)
+
+	messanger := redeye.NewMessanger(config.Broker, config.BasePath)
+	messanger.Start()
+
 	web = redeye.NewWebServer(config.Addr, config.BasePath)
 	go web.Start(&wg)
 
-	// var p aeye.Pipeline
-	// log.Printf("pipe: %+v\n", p)
-
-	log.Println("Waiting for web to end")
 	wg.Wait()
 }
