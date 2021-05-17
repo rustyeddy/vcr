@@ -69,14 +69,12 @@ func (m *Messanger) Start() (q chan TLV) {
 		return
 	}
 
-	// Roll through the subscription list and subscribe
+	// Roll through the subscription list and subscribe.  XXX - Make sure
+	// to allow post start up subsriptions also
 	for _, topic := range m.Subscriptions {
 		log.Println("topic", topic, " MQTT Subscribe to topic...")
 		m.Subscribe(topic)
 	}
-
-	// Announce our presence on the camera channel
-	m.Announce()
 
 	q = make(chan TLV)
 	log.Println("messanger gofuncing listener")
@@ -119,10 +117,11 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 
 	log.Println("topic", topic, "payload", payload, "MQTT incoming message.")
 
+	// XXX - This needs to be handled mo betta.
 	switch {
 	case strings.Compare(topic, "camera/announce") == 0:
 
-		m.Announce()
+		m.Publish("announce/controller/" + m.Name, m.Name)
 
 	case strings.Contains(topic, "camera/"):
 		switch payload {
@@ -168,7 +167,7 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 		case "hello":
 
 			// Announce ourselves
-			m.Announce()
+			m.Publish("announce/controller/" + m.Name, m.Name)
 			break
 
 		default:
@@ -177,18 +176,15 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 	}
 }
 
-// TODO Move this to video ...
-// Announce ourselves to the announce channel
-func (m *Messanger) Announce() {
+func (m *Messanger) Publish(topic, text string) {
 
-	//data := "camera/" + GetHostname()
-	topic := m.BasePath + "/announce/controller/" + m.Name
+	tstr := m.BasePath + topic 
 	if m.Client == nil {
 		log.Println("function", "Announce", "Expected client to be connected")
 	}
 
-	log.Println("Topic", topic, "Name", m.Name, "announcing our presence")
-	token := m.Client.Publish(topic, 0, false, m.Name)
+	log.Println("Topic", tstr, "Name", m.Name, "announcing our presence")
+	token := m.Client.Publish(tstr, 0, false, m.Name)
 	token.Wait()
 }
 

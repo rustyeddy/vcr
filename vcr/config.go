@@ -11,8 +11,9 @@ import (
 // Configuration struct handles the startup and running configuration for
 // redeye vcr, includes reading and writing to file.
 type Configuration struct {
-	Addr     string `json:"addr"` // the address we'll serve up 
-	Broker   string `json:"broker"` // MQTT broker address
+	ID		 string `json:"id"`		  // The ID
+	Addr     string `json:"addr"`	  // the address we'll serve up 
+	Broker   string `json:"broker"`	  // MQTT broker address
 	BasePath string `json:"basepath"` // /redeye
 }
 
@@ -20,6 +21,7 @@ func init() {
 	flag.StringVar(&config.Addr, "addr", ":8000", "Address to serve up redeye from")
 	flag.StringVar(&config.Broker, "broker", "tcp://localhost:1883", "MQTT Broker")
 	flag.StringVar(&config.BasePath, "basepath", "/redeye", "BasePath for MQTT Topics and REST URL")
+	flag.StringVar(&config.ID, "id", "", "Set the ID for this node")
 }
 
 func (c *Configuration) Save(path string) (err error) {
