@@ -3,6 +3,9 @@ all: plugins redeye
 redeye: *.go
 	go build -v
 
+test:
+	./bin/get-health.sh
+
 rpi:
 	GOOS=linux GOARCH=arm GOARM=7 go build -v
 
