@@ -5,11 +5,16 @@ import (
 	"log"
 	"sync"
 
+	"github.com/redeyelab/redeye"
 	//"github.com/redeyelab/redeye/aeye"
 )
 
 var (
 	config Configuration
+
+	cameraList []string
+
+	web *redeye.WebServer;
 	cmdQ chan TLV
 )
 
@@ -22,12 +27,13 @@ func main() {
 
 	flag.Parse()
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go web(wg)
-
 	messanger = NewMessanger()
 	messanger.Start(cmdQ)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	web = redeye.NewWebServer(config.Addr, config.BasePath)
+	go web.Start(&wg)
 
 	// var p aeye.Pipeline
 	// log.Printf("pipe: %+v\n", p)

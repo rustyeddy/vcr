@@ -3,7 +3,7 @@ package camera
 import (
 	"fmt"
 
-	"github.com/rs/zerolog/log"
+	"log"
 	"gocv.io/x/gocv"
 )
 
@@ -106,7 +106,6 @@ func (cam *Camera) PumpVideo() (frames <-chan *gocv.Mat) {
 			// sent the frame to the frame pipeline (should we send by )
 			fmt.Printf("frame %+v\n", img)
 			frameQ <- &img
-
 		}
 		log.Info().Bool("recording", cam.Recording).Msg("Video loop exiting ...")
 	}()
