@@ -25,16 +25,27 @@ func main() {
 	wg.Add(1)
 
 	msg := redeye.NewMessanger(config.Broker, config.BasePath)
-	msg.Start()
+	msgQ := msg.Start()
+	msg.SubscribeCameras()
+	msg.Subscribe("/foo")
 
 	web = redeye.NewWebServer(config.Addr, config.BasePath)
 	go web.Start(&wg)
 
-	for (true) {
-		time.Sleep(time.Second * 10)
+	// Announce our presence on the camera channel
+	msg.Publish("/announce/controller/" + msg.Name, msg.Name)
 
-		// Announce our presence on the camera channel
-		msg.Publish("/announce/controller/" + msg.Name, msg.Name)
+	for (true) {
+
+		var cmd redeye.TLV
+		select {
+		case cmd = <-msgQ:
+			log.Println("MSG: ", cmd)
+
+		default:
+			log.Println("Main Event Loop, nothing much to do but pause for a moment ...")
+			time.Sleep(time.Second * 10)
+		}
 	}
 
 	wg.Wait()

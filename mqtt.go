@@ -2,10 +2,10 @@ package redeye
 
 import (
 	"log"
-	"strings"
 	"time"
 	"encoding/json"
 	"net/http"
+
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
@@ -14,7 +14,9 @@ type Messanger struct {
 	Name          string
 	Broker        string
 	BasePath	  string
+
 	Subscriptions []string
+	Published	  []string
 
 	mqtt.Client
 	Error error
@@ -39,13 +41,10 @@ func NewMessanger(broker, path string) (m *Messanger) {
 	if m.Name == "" {
 		log.Fatal("Expected a hostname got (nil)")
 	}
-	// sub := "camera/" + m.Name
-	// m.Subscriptions = []string{sub}
 	return m
 }
 
-// Start fires up our MQTT client, then subscribes the given subscription
-// list.
+// Start fires up our MQTT client
 func (m *Messanger) Start() (q chan TLV) {
 
 	// set up the MQTT client options
@@ -60,6 +59,7 @@ func (m *Messanger) Start() (q chan TLV) {
 		log.Println("New Client Failed, no MQTT available")
 		return
 	}
+	log.Printf("MESSANGER: %+v\n", m)
 
 	// Have the client connect to the broker
 	log.Println("Connect to MQTT broker: ", m.Broker)
@@ -67,13 +67,6 @@ func (m *Messanger) Start() (q chan TLV) {
 		m.Error = t.Error()
 		log.Println("error", m.Error.Error())
 		return
-	}
-
-	// Roll through the subscription list and subscribe.  XXX - Make sure
-	// to allow post start up subsriptions also
-	for _, topic := range m.Subscriptions {
-		log.Println("topic", topic, " MQTT Subscribe to topic...")
-		m.Subscribe(topic)
 	}
 
 	q = make(chan TLV)
@@ -99,14 +92,18 @@ func (m *Messanger) Start() (q chan TLV) {
 
 // Subscribe to the given channel
 func (m *Messanger) Subscribe(topic string) {
-	log.Println("broker ", m.Broker, " channel ", topic, " Start MQTT Listener")
 
+	log.Println("broker ", m.Broker, " channel ", topic, " Start MQTT Listener")
 	if t := m.Client.Subscribe(topic, 0, nil); t.Wait() && t.Error() != nil {
 		log.Println("error", t.Error().Error(), "Failed to subscribe to mqtt socket")
 		return
 	}
-	log.Println("topic", topic, " suscribed to topic")
+	log.Println("topic: ", topic, " suscribed to topic")
 	m.Subscriptions = append(m.Subscriptions, topic)
+}
+
+func (m *Messanger) SubscribeCameras() {
+	m.Subscribe(m.BasePath + "/announce/camera")
 }
 
 // handle all incoming MQTT messages here.
@@ -115,64 +112,20 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 	topic := msg.Topic()
 	payload := string(msg.Payload())
 
-	log.Println("topic", topic, "payload", payload, "MQTT incoming message.")
+	log.Println("MQTT [In] ", topic, "payload", payload)
 
 	// XXX - This needs to be handled mo betta.
-	switch {
-	case strings.Compare(topic, "camera/announce") == 0:
+	switch topic {
 
-		m.Publish("announce/controller/" + m.Name, m.Name)
+	case m.BasePath + "/announce/camera":
 
-	case strings.Contains(topic, "camera/"):
-		switch payload {
+		log.Println("Creating a new camera! ", payload)		
+		cam := NewCamera(payload)
+		log.Printf("New camera: %+v\n", cam)
 
-		case "pause", "off", "play", "on":
-			log.Println("msg", payload, "sending payload to cmdQ")
-			buf := make([]byte, 2)
-			buf[1] = 2 // all our messages are two bytes!
-			switch payload {
-			case "on", "play":
-				buf[0] = CMDPlay
-			case "off", "pause":
-				buf[0] = CMDPause
-			case "snap":
-				buf[0] = CMDSnap
-			default:
-				log.Println("str", payload, "Unsupported Msg Type")
-				return
-			}
 
-			// cmdQ <- TLV{buf}
-			break
-
-		case "ai":
-			// TODO Send a message rather than handle here
-
-			/*
-				 var err error
-
-				if video.VideoPipeline == nil {
-					video.VideoPipeline, err = GetPipeline(config.Pipeline)
-					if err != nil {
-						log.Println().Str("pipeline", config.Pipeline).Msg("Failed to get pipeline")
-						return
-					}
-				} else {
-					// Do we need to stop something .?.
-					video.VideoPipeline = nil
-				}
-			*/
-			break
-
-		case "hello":
-
-			// Announce ourselves
-			m.Publish("announce/controller/" + m.Name, m.Name)
-			break
-
-		default:
-			log.Println("topic", topic, "unknown command")
-		}
+	default:
+		log.Println("ERROR - topic", topic, "unknown command")
 	}
 }
 
@@ -220,3 +173,4 @@ func (m *Messanger) GetStatus() (ms *MessangerStatus) {
 	ms.Connected = m.Client != nil
 	return ms
 }
+
