@@ -7,14 +7,13 @@ import (
 	"time"
 
 	"github.com/redeyelab/redeye"
-	//"github.com/redeyelab/redeye/aeye"
 )
 
 var (
 	config Configuration
 
 	cameraList []string
-	web *redeye.WebServer;
+	web        *redeye.WebServer
 )
 
 func main() {
@@ -27,15 +26,14 @@ func main() {
 	msg := redeye.NewMessanger(config.Broker, config.BasePath)
 	msgQ := msg.Start()
 	msg.SubscribeCameras()
-	msg.Subscribe("/foo")
 
 	web = redeye.NewWebServer(config.Addr, config.BasePath)
 	go web.Start(&wg)
 
 	// Announce our presence on the camera channel
-	msg.Publish("/announce/controller/" + msg.Name, msg.Name)
+	msg.Publish("/announce/controller/"+msg.Name, msg.Name)
 
-	for (true) {
+	for true {
 
 		var cmd redeye.TLV
 		select {
