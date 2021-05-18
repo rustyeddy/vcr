@@ -25,6 +25,7 @@ func NewWebServer(Addr, Path string) (web *WebServer) {
 		Handlers: nil,
 	}
 	http.HandleFunc(Path + "/health", health)
+	http.HandleFunc(Path + "/cameras", GetCameras)
 	return web
 }
 
