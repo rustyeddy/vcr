@@ -3,14 +3,12 @@ package redeye
 import (
 	"net"
 	"os"
-	"log"
 )
 
 // GetHostname for ourselves
 func GetHostname() (hname string) {
 	var err error
 	if hname, err = os.Hostname(); err != nil {
-		log.Println("error: ", err.Error());
 		return ""
 	}
 	return hname
@@ -20,8 +18,7 @@ func GetHostname() (hname string) {
 func GetIPAddr() (addr string) {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
-		log.Println("addr: ", addr, ", ", "error: ", err.Error(), " Failed to get IP address")
-		return
+		return ""
 	}
 
 	for _, a := range addrs {

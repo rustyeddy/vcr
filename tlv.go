@@ -48,7 +48,7 @@ const (
 // NewTLV gets a new TLV ready to go
 func NewTLV(typ, l byte) (t TLV) {
 	if l < 2 {
-		log.Fatal("len", l, "TLV Len must be at least 2 bytes")
+		panic("TLV Len must be at least 2 bytes")
 	}
 	t.tlv = make([]byte, l)
 	t.tlv[0] = typ
@@ -85,15 +85,22 @@ func (t *TLV) Str() string {
 }
 
 func cmdZero(tlv TLV) {
-	log.Println("ADD CMD ZERO")
+	if Config.Debug {
+		log.Println("ADD CMD ZERO")		
+	}
+
 }
 
 func cmdTerm(tlv TLV) {
-	log.Println("ADD CMD ZERO")
+	if Config.Debug {
+		log.Println("ADD CMD TERM")		
+	}
 }
 
 func cmdError(tlv TLV) {
-	log.Println("ADD CMD ZERO")
+	if Config.Debug {
+		log.Println("ADD CMD ERROR")		
+	}
 }
 
 func cmdPlay(tlv TLV) {

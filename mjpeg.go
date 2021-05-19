@@ -39,7 +39,9 @@ func (m *MJPEGServer) Start(cmdQ chan TLV) (mpgQ chan []byte) {
 
 	// Set the route for video
 	mpath := "/mjpeg"
-	log.Println(m.Addr, " path ", mpath, " Starting video server")
+	if Config.Debug {
+		log.Println(m.Addr, " path ", mpath, " Starting video server")		
+	}
 
 	if m.Stream == nil {
 		m.Stream = mjpeg.NewStream()
@@ -50,7 +52,9 @@ func (m *MJPEGServer) Start(cmdQ chan TLV) (mpgQ chan []byte) {
 
 	// go func the command listener
 	go func() {
-		log.Println("Starting MJPEG server")
+		if Config.Debug {
+			log.Println("Starting MJPEG server")			
+		}
 		var cmd TLV
 		for {
 			select {
@@ -61,9 +65,11 @@ func (m *MJPEGServer) Start(cmdQ chan TLV) (mpgQ chan []byte) {
 		}
 	}()
 
-	// Now go func the MJPEG HTTP server
+	// Now go func the MJPEG HTTP server: make this a config
 	addr := "http://localhost:8833/mjpeg"
-	log.Println("Video Addr: ", addr)
+	if Config.Debug {
+		log.Println("MJPEG Streaming video addrress: ", addr)		
+	}
 
 	go http.ListenAndServe(addr, nil)
 	return mjpgQ

@@ -1,7 +1,9 @@
 package redeye
 
 import (
+	"fmt"
 	"log"
+
 
 	"github.com/redeyelab/redeye/vidsrc"
 )
@@ -41,26 +43,24 @@ func (vid *VideoPlayer) Start(cmdQ chan TLV) chan TLV {
 
 	// go func the command listener
 	go func() {
-		log.Println("Starting Video service listener .. ")
+		if Config.Debug {
+			log.Println("Starting Video service listener .. ")			
+		}
 		for {
 			select {
 			case cmd := <-cmdQ:
-				log.Println("incoming video command")
+				if Config.Debug {
+					log.Println("incoming video command")					
+				}
 				switch cmd.Type() {
 				case CMDPlay:
-
-					// Signal Camera to start playing
-					log.Println("Playing Video...")
 					go vid.Play()
 
 				case CMDPause:
-
-					// Signal camera to strop pumping video
-					log.Println("Pausing Video...")
 					vid.Pause()
 
 				default:
-					log.Println("unknown command")
+					log.Printf("VidPlayer Start: unknown command %+v\n", cmd)
 				}
 			}
 		}
@@ -76,15 +76,14 @@ func (vid *VideoPlayer) SetPipeline(name string) (err error) {
 
 // Start Video opens the camera (sensor) and data (vidoe) starts streaming in.
 // We will be streaming MJPEG for our initial use case.
-func (vid *VideoPlayer) Play() {
+func (vid *VideoPlayer) Play() error {
 	var err error
 	var buf []byte
 
 	log.Println("StartVideo Entered ... ")
 	defer log.Println("StartVideo video has exited")
 	if vid.Recording {
-		log.Println("camera is already recording")
-		return
+		return fmt.Errorf("camera is already recording")
 	}
 
 	// Both API REST server and MQTT server have started up, we are
@@ -115,19 +114,19 @@ func (vid *VideoPlayer) Play() {
 			// Create the store
 
 			if err = frame.Save(fname); err != nil {
-				log.Println("filename:", fname, " Snapshot failed to save ")
-			} else {
-				log.Println("Filename: ", fname, " Snapshot saved")
+				return fmt.Errorf("filename: snapshot save failed %s", fname)
 			}
 			vid.SnapRequest = false
 		}
 	}
-	log.Println("Stopping Video")
+	return nil
 }
 
 // StopVideo shuts the sensor down and turns
 func (vid *VideoPlayer) Pause() {
-	defer log.Println("camera-id: ", vid.Camstr, " recording: ", " Stop StreamVideo")
+	if Config.Debug {
+		defer log.Println("camera-id: ", vid.Camstr, " recording: ", " Stop StreamVideo")	
+	}
 	vid.Recording = false
 }
 

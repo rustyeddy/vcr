@@ -1,8 +1,6 @@
 package redeye
 
 import (
-	"log"
-
 	"encoding/json"
 	"net/http"
 )
@@ -31,6 +29,6 @@ func GetCameras(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cam *Camera) Handler(w http.ResponseWriter, req *http.Request) {
-	log.Println("HTTP Handler")
+	GetCameras(w, req)
 }
 

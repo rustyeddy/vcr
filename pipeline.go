@@ -1,6 +1,7 @@
 package redeye
 
 import (
+	"fmt"
 	"log"
 	"plugin"
 	"sync"
@@ -73,7 +74,7 @@ func (fq *VideoPipe) Listen(done <-chan bool, wg *sync.WaitGroup) {
 		// Wait for a new frame and check that it is ok
 		img, ok := <-fq.Q
 		if !ok {
-			log.Println("Listen channel appears to be closed")
+			log.Println("Pipeline: Listen channel appears to be closed")
 			return
 		}
 
@@ -108,14 +109,12 @@ func GetPipeline(fname string) (p VideoPipeline, err error) {
 
 	pl, err := plugin.Open(fname)
 	if err != nil {
-		log.Println("ERROR: ", err.Error(), "failed to open plugin")
-		return nil, err
+		return nil, fmt.Errorf("Error: failed to open plugin %w", err.Error())
 	}
 
 	sym, err := pl.Lookup("Pipeline")
 	if err != nil {
-		log.Println("ERROR: ", err.Error(), "Find the Pipe")
-		return nil, err
+		return nil, fmt.Errorf("Error: pipeline NOT FOUND %w", err.Error())
 	}
 	p = sym.(VideoPipeline)
 

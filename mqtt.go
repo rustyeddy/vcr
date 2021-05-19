@@ -1,6 +1,7 @@
 package redeye
 
 import (
+	"fmt"
 	"log"
 	"time"
 	"encoding/json"
@@ -45,7 +46,7 @@ func NewMessanger(broker, path string) (m *Messanger) {
 }
 
 // Start fires up our MQTT client
-func (m *Messanger) Start() (q chan TLV) {
+func (m *Messanger) Start() (q chan TLV, err error) {
 
 	// set up the MQTT client options
 	opts := mqtt.NewClientOptions().AddBroker(m.Broker).SetClientID(m.Name)
@@ -56,50 +57,46 @@ func (m *Messanger) Start() (q chan TLV) {
 	// create a NewClient
 	m.Client = mqtt.NewClient(opts)
 	if m.Client == nil {
-		log.Println("New Client Failed, no MQTT available")
-		return
+		return nil, fmt.Errorf("New Client Failed, no MQTT available")
 	}
-	log.Printf("MESSANGER: %+v\n", m)
-
 	// Have the client connect to the broker
-	log.Println("Connect to MQTT broker: ", m.Broker)
 	if t := m.Client.Connect(); t.Wait() && t.Error() != nil {
 		m.Error = t.Error()
-		log.Println("error", m.Error.Error())
-		return
+		return nil, fmt.Errorf("Error connecting to MQTT broker: %w", m.Error)
 	}
 
 	q = make(chan TLV)
-	log.Println("messanger gofuncing listener")
 	go func() {
 		for {
-			log.Println("Waiting for message ... ")
 			select {
 			case cmd := <-q:
 				log.Println("cmd", cmd.Str(), "got a message.")
 				switch cmd.Type() {
 				case CMDTerm:
-					log.Println("Exiting messanger")
 					return
 				default:
-					log.Println("cmd is not supported")
+					if Config.Debug {
+						log.Println("cmd is not supported")						
+					}
 				}
 			}
 		}
 	}()
-	return q
+	return q, nil
 }
 
 // Subscribe to the given channel
-func (m *Messanger) Subscribe(topic string) {
+func (m *Messanger) Subscribe(topic string) error {
 
-	log.Println("broker ", m.Broker, " channel ", topic, " Start MQTT Listener")
-	if t := m.Client.Subscribe(topic, 0, nil); t.Wait() && t.Error() != nil {
-		log.Println("error", t.Error().Error(), "Failed to subscribe to mqtt socket")
-		return
+	if Config.Debug {
+		log.Print("Subscribe to topic:", topic, "on broker ", m.Broker)		
 	}
-	log.Println("topic: ", topic, " suscribed to topic")
+
+	if t := m.Client.Subscribe(topic, 0, nil); t.Wait() && t.Error() != nil {
+		return fmt.Errorf("Failed to subscribe to mqtt socket: %w", t.Error())
+	}
 	m.Subscriptions = append(m.Subscriptions, topic)
+	return nil
 }
 
 func (m *Messanger) SubscribeCameras() {
@@ -112,33 +109,32 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 	topic := msg.Topic()
 	payload := string(msg.Payload())
 
-	log.Println("MQTT [In] ", topic, "payload", payload)
-
+	if Config.Debug {
+		log.Println("MQTT [In] ", topic, "payload", payload)		
+	}
 	// XXX - This needs to be handled mo betta.
 	switch topic {
 
 	case m.BasePath + "/announce/camera":
-
-		log.Println("Creating a new camera! ", payload)		
 		cam := NewCamera(payload)
-		log.Printf("New camera: %+v\n", cam)
-
+		fmt.Printf("CAM: %+v\n", cam)
 
 	default:
-		log.Println("ERROR - topic", topic, "unknown command")
+		if Config.Debug {
+			log.Println("ERROR - topic", topic, "unknown command")			
+		}
 	}
 }
 
-func (m *Messanger) Publish(topic, text string) {
+func (m *Messanger) Publish(topic, text string) error {
 
 	tstr := m.BasePath + topic 
 	if m.Client == nil {
-		log.Println("function", "Announce", "Expected client to be connected")
+		return fmt.Errorf("Failed to Publish topic %s", topic)
 	}
-
-	log.Println("Topic", tstr, "Name", m.Name, "announcing our presence")
 	token := m.Client.Publish(tstr, 0, false, m.Name)
 	token.Wait()
+	return nil
 }
 
 // getMessanger
