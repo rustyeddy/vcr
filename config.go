@@ -2,7 +2,6 @@ package redeye
 
 import (
 	"encoding/json"
-	"flag"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -20,14 +19,6 @@ type Configuration struct {
 var (
 	config Configuration
 )
-
-func init() {
-	flag.StringVar(&config.Addr, "addr", ":8000", "Address to serve up redeye from")
-	flag.StringVar(&config.Broker, "broker", "tcp://10.24.10.10:1833", "MQTT Broker")
-	flag.StringVar(&config.Thumb, "thumb", "img/thumbnail.jpg", "Thumbnail Image")
-	flag.StringVar(&config.Vidsrc, "vidsrc", "0", "Video Source")
-	flag.StringVar(&config.Vidsrc, "vidaddr", "8877", "Video Address")
-}
 
 func (c *Configuration) Save(path string) (err error) {
 

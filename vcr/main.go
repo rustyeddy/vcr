@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"log"
 	"sync"
 	"time"
@@ -16,9 +15,12 @@ var (
 	web        *redeye.WebServer
 )
 
+func init() {
+	log.Println("Redeye VCR init...")
+}
 func main() {
 	log.Println("Redeye VCR Starting, parsing args...")
-	flag.Parse()
+	// flag.Parse()
 
 	var wg sync.WaitGroup
 	wg.Add(1)
