@@ -45,13 +45,13 @@ func main() {
 	log.Println("Subscribe to cameras announce ments")
 	msg.SubscribeCameras()
 
-	log.Println("Startup our web server ")
+	log.Println("Startup i web server ")
 	web = redeye.NewWebServer(config.Addr, config.BasePath)
 	go web.Start(&wg)
 
 	// Announce our presence on the camera channel
 	log.Println("Announce our Presense")
-	msg.Publish(config.BasePath + "/announce/controller/"+msg.Name, msg.Name)
+	msg.Publish("/announce/controller/"+msg.Name, msg.Name)
 
 	log.Println("Running the main event loop")
 	for true {

@@ -55,6 +55,7 @@ func (m *MJPEGServer) Start(cmdQ chan TLV) (mpgQ chan []byte) {
 		if Config.Debug {
 			log.Println("Starting MJPEG server")			
 		}
+	
 		var cmd TLV
 		for {
 			select {
