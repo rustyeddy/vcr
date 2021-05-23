@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"time"
+	"sync"
+
 	"encoding/json"
 	"net/http"
 
@@ -24,15 +26,19 @@ type Messanger struct {
 }
 
 var (
-	messanger *Messanger
+ 	messanger *Messanger
 )
 
 func GetMessanger() *Messanger {
-	return messanger
+	if messanger == nil {
+		log.Println("Creating New messanger ", Config.Broker, Config.BasePath)
+		messanger = newMessanger(Config.Broker, Config.BasePath)
+	}
+ 	return messanger
 }
 
 // NewMessanger creates a new mqtt messanger
-func NewMessanger(broker, path string) (m *Messanger) {
+func newMessanger(broker, path string) (m *Messanger) {
 	m = &Messanger{
 		Name:   GetHostname(),
 		Broker: broker,
@@ -94,13 +100,11 @@ func (m *Messanger) Subscribe(topic string) error {
 
 	if t := m.Client.Subscribe(topic, 0, nil); t.Wait() && t.Error() != nil {
 		return fmt.Errorf("Failed to subscribe to mqtt socket: %w", t.Error())
+	} else {
+		log.Printf("Subscription succeeded %s - %+v", topic, t)
 	}
 	m.Subscriptions = append(m.Subscriptions, topic)
 	return nil
-}
-
-func (m *Messanger) SubscribeCameras() {
-	m.Subscribe(m.BasePath + "/announce/camera")
 }
 
 // handle all incoming MQTT messages here.
@@ -109,10 +113,7 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 	topic := msg.Topic()
 	payload := string(msg.Payload())
 
-	if Config.Debug {
-		log.Println("MQTT [In] ", topic, "payload", payload)		
-	}
-	// XXX - This needs to be handled mo betta.
+	log.Println("MQTT [In] ", topic, "payload", payload)		
 	switch topic {
 
 	case m.BasePath + "/announce/camera":
@@ -168,5 +169,16 @@ func (m *Messanger) GetStatus() (ms *MessangerStatus) {
 	}
 	ms.Connected = m.Client != nil
 	return ms
+}
+
+
+func (m *Messanger) SubscribeCameras(wg *sync.WaitGroup) {
+	defer wg.Done()
+	m.Subscribe(m.BasePath + "/announce/camera/+")
+}
+
+func (m *Messanger) SubscribeControllers(wg *sync.WaitGroup) {
+	defer wg.Done()
+	m.Subscribe(m.BasePath + "/announce/controller/+")
 }
 

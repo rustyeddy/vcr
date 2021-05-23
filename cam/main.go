@@ -9,6 +9,10 @@ import (
 	"github.com/redeyelab/redeye"
 )
 
+type Configuration struct {
+	*redeye.Configuration
+}
+
 var (
 	config Configuration
 	web    *redeye.WebServer
@@ -18,6 +22,14 @@ var (
 	vidQ chan redeye.TLV
 )
 
+func init() {
+	config.Configuration = &redeye.Config
+	flag.StringVar(&config.Addr, "addr", ":8000", "Address to serve up redeye from")
+	flag.StringVar(&config.Broker, "broker", "tcp://10.24.10.10:1883", "MQTT Broker")
+	flag.StringVar(&config.BasePath, "basepath", "/redeye", "BasePath for MQTT Topics and REST URL")
+	flag.StringVar(&config.ID, "id", "", "Set the ID for this node")
+}
+
 func main() {
 	log.Println("Redeye Camera Starting Starting, parsing args...")
 	flag.Parse()
@@ -26,7 +38,7 @@ func main() {
 	wg.Add(1)
 
 	log.Println("Connect to our message broker")
-	msg := redeye.NewMessanger(config.Broker, config.BasePath)
+	msg := redeye.GetMessanger()
 	msgQ, err := msg.Start()
 	if err != nil {
 		log.Fatal("Error connecting to message broker")
@@ -39,9 +51,13 @@ func main() {
 	vid = redeye.NewVideoPlayer()
 	vidQ = vid.Start(cmdQ)
 
+	log.Println("Subscribe to the Controllers")
+	wg.Add(1)
+	go msg.SubscribeControllers(&wg)
+
 	log.Println("Announce our Presense")
 	msg.Publish("/announce/camera/"+msg.Name, msg.Name)
-
+	log.Printf("Subscribers: %+v\n", msg.Subscriptions)
 	vidQ <- redeye.NewTLV(redeye.CMDPlay, 2)
 	for true {
 

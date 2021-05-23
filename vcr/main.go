@@ -36,14 +36,15 @@ func main() {
 	wg.Add(1)
 
 	log.Println("Create and start the new messanger")
-	msg := redeye.NewMessanger(config.Broker, config.BasePath)
+	msg := redeye.GetMessanger()
 	msgQ, err := msg.Start()
 	if err != nil {
 		log.Fatal("Error unable to start messanger, shutting down")
 	}
 
 	log.Println("Subscribe to cameras announce ments")
-	msg.SubscribeCameras()
+	wg.Add(1)
+	go msg.SubscribeCameras(&wg)
 
 	log.Println("Startup i web server ")
 	web = redeye.NewWebServer(config.Addr, config.BasePath)
@@ -54,6 +55,7 @@ func main() {
 	msg.Publish("/announce/controller/"+msg.Name, msg.Name)
 
 	log.Println("Running the main event loop")
+	log.Printf("Subscribers: %+v\n", msg.Subscriptions)
 	for true {
 
 		var cmd redeye.TLV
