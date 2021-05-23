@@ -34,25 +34,22 @@ func main() {
 
 	var wg sync.WaitGroup
 	wg.Add(1)
-
 	log.Println("Create and start the new messanger")
 	msg := redeye.GetMessanger()
-	msgQ, err := msg.Start()
+	msgQ, err := msg.Start(&wg)
 	if err != nil {
 		log.Fatal("Error unable to start messanger, shutting down")
 	}
 
-	log.Println("Subscribe to cameras announce ments")
-	wg.Add(1)
-	go msg.SubscribeCameras(&wg)
-
 	log.Println("Startup i web server ")
+	wg.Add(1)
 	web = redeye.NewWebServer(config.Addr, config.BasePath)
 	go web.Start(&wg)
 
 	// Announce our presence on the camera channel
-	log.Println("Announce our Presense")
-	msg.Publish("/announce/controller/"+msg.Name, msg.Name)
+	topic := "/announce/controller"
+	log.Println("Announce our Presense: ", topic)
+	msg.Publish(topic, msg.Name)
 
 	log.Println("Running the main event loop")
 	log.Printf("Subscribers: %+v\n", msg.Subscriptions)

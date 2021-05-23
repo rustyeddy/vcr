@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 	"sync"
+	"os"
 
 	"encoding/json"
 	"net/http"
@@ -52,14 +53,16 @@ func newMessanger(broker, path string) (m *Messanger) {
 }
 
 // Start fires up our MQTT client
-func (m *Messanger) Start() (q chan TLV, err error) {
+func (m *Messanger) Start(wg *sync.WaitGroup) (q chan TLV, err error) {
 
+	mqtt.WARN = log.New(os.Stdout, "[DEBUG] ", 0)
+	
 	// set up the MQTT client options
 	opts := mqtt.NewClientOptions().AddBroker(m.Broker).SetClientID(m.Name)
 	opts.SetKeepAlive(2 * time.Second)
 	opts.SetDefaultPublishHandler(m.handleIncoming)
 	opts.SetPingTimeout(10 * time.Second)
-
+	
 	// create a NewClient
 	m.Client = mqtt.NewClient(opts)
 	if m.Client == nil {
@@ -71,9 +74,18 @@ func (m *Messanger) Start() (q chan TLV, err error) {
 		return nil, fmt.Errorf("Error connecting to MQTT broker: %w", m.Error)
 	}
 
+	log.Println("Args: ", os.Args[0])
+
+	if (os.Args[0] == "./vcr") {
+		m.SubscribeCameras()		
+	} else {
+		m.SubscribeControllers()		
+	}
+
 	q = make(chan TLV)
 	go func() {
 		for {
+			log.Println("Waiting for an incoming MQTT cmd")
 			select {
 			case cmd := <-q:
 				log.Println("cmd", cmd.Str(), "got a message.")
@@ -94,17 +106,25 @@ func (m *Messanger) Start() (q chan TLV, err error) {
 // Subscribe to the given channel
 func (m *Messanger) Subscribe(topic string) error {
 
-	if Config.Debug {
-		log.Print("Subscribe to topic:", topic, "on broker ", m.Broker)		
-	}
-
+	log.Println("Subscribe broker ", m.Broker, "topic: ", topic)
 	if t := m.Client.Subscribe(topic, 0, nil); t.Wait() && t.Error() != nil {
 		return fmt.Errorf("Failed to subscribe to mqtt socket: %w", t.Error())
 	} else {
-		log.Printf("Subscription succeeded %s - %+v", topic, t)
+		log.Printf("Subscription succeeded %s", topic)
 	}
 	m.Subscriptions = append(m.Subscriptions, topic)
 	return nil
+}
+
+
+func (m *Messanger) SubscribeCameras() error {
+	topic := m.BasePath + "/announce/camera"
+	return m.Subscribe(topic)
+}
+
+func (m *Messanger) SubscribeControllers() error {
+	topic := m.BasePath + "/announce/controller"
+	return m.Subscribe(topic)
 }
 
 // handle all incoming MQTT messages here.
@@ -116,14 +136,16 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 	log.Println("MQTT [In] ", topic, "payload", payload)		
 	switch topic {
 
+	case m.BasePath + "/announce/controller":
+		cam := NewCamera(payload)
+		fmt.Printf("Controller: %+v\n", cam)
+
 	case m.BasePath + "/announce/camera":
 		cam := NewCamera(payload)
-		fmt.Printf("CAM: %+v\n", cam)
+		fmt.Printf("Camera: %+v\n", cam)
 
 	default:
-		if Config.Debug {
-			log.Println("ERROR - topic", topic, "unknown command")			
-		}
+		log.Println("Incoming Message - topic ", topic, ", payload: ", payload)
 	}
 }
 
@@ -133,8 +155,11 @@ func (m *Messanger) Publish(topic, text string) error {
 	if m.Client == nil {
 		return fmt.Errorf("Failed to Publish topic %s", topic)
 	}
+
+	log.Println("Publishing topic: ", tstr, " payload ", m.Name)
 	token := m.Client.Publish(tstr, 0, false, m.Name)
 	token.Wait()
+	log.Println("Publishing topic: ", tstr, " payload ", m.Name, " done waiting")
 	return nil
 }
 
@@ -169,16 +194,5 @@ func (m *Messanger) GetStatus() (ms *MessangerStatus) {
 	}
 	ms.Connected = m.Client != nil
 	return ms
-}
-
-
-func (m *Messanger) SubscribeCameras(wg *sync.WaitGroup) {
-	defer wg.Done()
-	m.Subscribe(m.BasePath + "/announce/camera/+")
-}
-
-func (m *Messanger) SubscribeControllers(wg *sync.WaitGroup) {
-	defer wg.Done()
-	m.Subscribe(m.BasePath + "/announce/controller/+")
 }
 

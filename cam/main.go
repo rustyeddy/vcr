@@ -39,10 +39,11 @@ func main() {
 
 	log.Println("Connect to our message broker")
 	msg := redeye.GetMessanger()
-	msgQ, err := msg.Start()
+	msgQ, err := msg.Start(&wg)
 	if err != nil {
 		log.Fatal("Error connecting to message broker")
 	}
+
 	log.Println("Fire up the web server")
 	web = redeye.NewWebServer(config.Addr, config.BasePath)
 	go web.Start(&wg)
@@ -51,12 +52,11 @@ func main() {
 	vid = redeye.NewVideoPlayer()
 	vidQ = vid.Start(cmdQ)
 
-	log.Println("Subscribe to the Controllers")
-	wg.Add(1)
-	go msg.SubscribeControllers(&wg)
+	topic := "/announce/camera"
+	log.Println("Announce our Presense: ", topic)
+	msg.Publish(topic, msg.Name)
 
-	log.Println("Announce our Presense")
-	msg.Publish("/announce/camera/"+msg.Name, msg.Name)
+	log.Println("Running the main event loop")
 	log.Printf("Subscribers: %+v\n", msg.Subscriptions)
 	vidQ <- redeye.NewTLV(redeye.CMDPlay, 2)
 	for true {
