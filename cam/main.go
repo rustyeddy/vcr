@@ -15,7 +15,7 @@ type Configuration struct {
 
 var (
 	config Configuration
-	web    *redeye.WebServer
+	web    redeye.WebServer
 	vid    *redeye.VideoPlayer
 
 	cmdQ chan redeye.TLV
@@ -45,7 +45,7 @@ func main() {
 	}
 
 	log.Println("Fire up the web server")
-	web = redeye.NewWebServer(config.Addr, config.BasePath)
+	web = redeye.GetWebServer(config.Addr, config.BasePath)
 	go web.Start(&wg)
 
 	log.Println("Grab a new video player and ready it to stream video")

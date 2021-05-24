@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 
-
 	"github.com/redeyelab/redeye/vidsrc"
 )
 
@@ -44,13 +43,13 @@ func (vid *VideoPlayer) Start(cmdQ chan TLV) chan TLV {
 	// go func the command listener
 	go func() {
 		if Config.Debug {
-			log.Println("Starting Video service listener .. ")			
+			log.Println("Starting Video service listener .. ")
 		}
 		for {
 			select {
 			case cmd := <-cmdQ:
 				if Config.Debug {
-					log.Println("incoming video command")					
+					log.Println("incoming video command")
 				}
 				switch cmd.Type() {
 				case CMDPlay:
@@ -125,7 +124,7 @@ func (vid *VideoPlayer) Play() error {
 // StopVideo shuts the sensor down and turns
 func (vid *VideoPlayer) Pause() {
 	if Config.Debug {
-		defer log.Println("camera-id: ", vid.Camstr, " recording: ", " Stop StreamVideo")	
+		defer log.Println("camera-id: ", vid.Camstr, " recording: ", " Stop StreamVideo")
 	}
 	vid.Recording = false
 }

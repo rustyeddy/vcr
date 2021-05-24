@@ -1,30 +1,37 @@
 package redeye
 
 import (
-	"sync"
 	"encoding/json"
 	"net/http"
+	"sync"
 )
 
 type WebServer struct {
-	Addr string
-	Basepath string				// /redeye
+	Addr     string
+	Basepath string // /redeye
 	Handlers []string
 }
 
 var (
+	web WebServer
+
 	successResponse = map[string]string{"success": "true"}
 	errorResponse   = map[string]string{"success": "false"}
 )
 
-func NewWebServer(Addr, Path string) (web *WebServer) {
-	web = &WebServer{
-		Addr: Addr,
+func GetWebServer(Addr, Path string) (web WebServer) {
+	web = WebServer{
+		Addr:     Addr,
 		Basepath: Path,
 		Handlers: nil,
 	}
-	http.HandleFunc(Path + "/health", health)
-	http.HandleFunc(Path + "/cameras", GetCameras)
+
+	//http.HandleFunc(Path+"/health", health)
+	web.RegisterHandlerFunc(Path+"/health", health)
+	web.RegisterHandlerFunc(Path+"/cameras", GetCameras)
+
+	// var stream Stream
+	// web.RegisterHandler("/redeye/mjpeg", stream)
 	return web
 }
 
