@@ -119,13 +119,22 @@ func (m *Messanger) Subscribe(topic string) error {
 
 func (m *Messanger) SubscribeCameras() error {
 	topic := m.BasePath + "/announce/camera"
+	log.Println("Subscribed to: ", topic)
 	return m.Subscribe(topic)
 }
 
 func (m *Messanger) SubscribeControllers() error {
 	topic := m.BasePath + "/announce/controller"
+	log.Println("Subscribed to: ", topic)
 	return m.Subscribe(topic)
 }
+
+func (m *Messanger) SubscribeCameraCMD() error {
+	topic := m.BasePath + "/camera/" + m.Name
+	log.Println("Subscribed to: ", topic)
+	return m.Subscribe(topic)
+}
+
 
 // handle all incoming MQTT messages here.
 func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
@@ -138,11 +147,16 @@ func (m *Messanger) handleIncoming(client mqtt.Client, msg mqtt.Message) {
 
 	case m.BasePath + "/announce/controller":
 		cam := NewCamera(payload)
-		fmt.Printf("Controller: %+v\n", cam)
+		log.Printf("New Controller: %+v\n", cam)
 
 	case m.BasePath + "/announce/camera":
 		cam := NewCamera(payload)
-		fmt.Printf("Camera: %+v\n", cam)
+		log.Printf("New Camera: %+v\n", cam)
+
+	case m.BasePath + "/camera/" + m.Name:
+		cam := GetVideoPlayer()
+		tlv := NewTLV(CMDPlay, 1)
+		cam.Q <- tlv
 
 	default:
 		log.Println("Incoming Message - topic ", topic, ", payload: ", payload)

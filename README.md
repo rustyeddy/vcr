@@ -1,8 +1,18 @@
 # Redeye Smart Network Camera
 
+RedEye is a framework to build _Intellient Video Network_
+applications. Easily build _Streaming Video_, _Computer Vision_ and
+_Machine Learning_ features to your _Environmental_ and
+_Industrial_ _IoT_ applications. 
+
+## Requirements
+
+Not much really. Start with a single Raspberry pi or build a network
+of 12 Jetson Nano's with a nice fit control station.
+
 RedEye is *smart* IP camera software built to run on inexpensive
-computers with connected cameras like the Raspberry Pi with a CSI
-camera. 
+computers with connected cameras like the Raspberry Pi with a CSI or USB
+camera's. 
 
 The idea is to be able to *control* a *network of cameras* providing
 various video stream(s) to _Computer Vision_ algorithms.

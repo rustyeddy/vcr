@@ -26,8 +26,8 @@ type VideoPipeline interface {
 type VideoPipe struct {
 	name string
 
-	//Q       chan *gocv.Mat // recieving data
-	//Process func(img *gocv.Mat)
+	// Q       chan *gocv.Mat // recieving data
+	// Process func(img *gocv.Mat)
 	Q       chan *img.Frame
 	Process func(img *img.Frame)
 	Next    VideoPipeline // try using this!!

@@ -38,6 +38,9 @@ func (s Stream) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	c := make(chan []byte)
 	s.lock.Lock()
+	if s.m == nil {
+		s.m = make(map[chan []byte]bool)
+	}
 	s.m[c] = true
 	s.lock.Unlock()
 

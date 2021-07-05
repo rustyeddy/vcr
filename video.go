@@ -76,7 +76,6 @@ func (vid *VideoPlayer) SetPipeline(name string) (err error) {
 // Start Video opens the camera (sensor) and data (vidoe) starts streaming in.
 // We will be streaming MJPEG for our initial use case.
 func (vid *VideoPlayer) Play() error {
-	var err error
 	var buf []byte
 
 	log.Println("StartVideo Entered ... ")
@@ -94,27 +93,21 @@ func (vid *VideoPlayer) Play() error {
 			vid.VideoPipeline.Send(frame)
 		}
 
-		// TODO: replace following when GoCV is not available.
-		// Finalize the annotated image. XXX maybe we create a write channel?
-		// buf, err = gocv.IMEncode(".jpg", *frame)
-		// if err != nil {
-		//	log.Fatal().Str("comp", "video").Msg("Failed encoding jpg")
-		//}
-
 		mjp := GetMJPEGServer()
 
 		// Send the annotated buffer to the MJPEG server
+		fmt.Println("Sending buffer: ", len(buf))
 		mjp.Q <- buf
 
 		// Check to see if a nsapshot has been requested, if so then
 		// take a snapshot. TODO put this in the video pipeline
 		if vid.SnapRequest {
-			fname := "pub/img/snapshot.jpg"
+			// fname := "pub/img/snapshot.jpg"
 			// Create the store
 
-			if err = frame.Save(fname); err != nil {
-				return fmt.Errorf("filename: snapshot save failed %s", fname)
-			}
+			// if err := frame.Save(fname); err != nil {
+			// 	return fmt.Errorf("filename: snapshot save failed %s", fname)
+			// }
 			vid.SnapRequest = false
 		}
 	}

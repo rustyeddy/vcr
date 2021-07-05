@@ -1,97 +1,106 @@
 package redeye
 
 import (
+	"context"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"time"
 
-	"github.com/gorilla/websocket"
+	"nhooyr.io/websocket"
+	"nhooyr.io/websocket/wsjson"
 )
 
-const (
-	// Time allowed to write a message to the peer.
-	writeWait = 10 * time.Second
+type WSServer struct {
+	c websocket.Conn
+}
 
-	// Maximum message size allowed from peer.
-	maxMessageSize = 8192
+type KeyVal struct {
+	K string
+	V interface{}
+}
 
-	// Time allowed to read the next pong message from the peer.
-	pongWait = 60 * time.Second
+// ServeHTTP
+func (ws WSServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
-	// Send pings to peer with this period. Must be less than pongWait.
-	pingPeriod = (pongWait * 9) / 10
+	log.Println("Warning Cors Header to '*'")
+	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{
+		Subprotocols:       []string{"echo"},
+		InsecureSkipVerify: true, // Take care of CORS
+		// OriginPatterns: ["*"],
+	})
 
-	// Time to wait before force close on connection.
-	closeGracePeriod = 10 * time.Second
-)
-
-// ===================== Websocket =====================================
-func wsUpgradeHndl(w http.ResponseWriter, r *http.Request) {
-
-	upgrader := &websocket.Upgrader{
-		ReadBufferSize:  1024,
-		WriteBufferSize: 1024,
-		CheckOrigin:     func(r *http.Request) bool { return true },
-	}
-	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println("ERROR: ", err.Error(), " Websocket Upgrade failed")
+		log.Println("ERROR ", err)
 		return
 	}
-	defer conn.Close()
+	defer c.Close(websocket.StatusInternalError, "houston, we have a problem")
 
-	log.Println("ws Upgrader starting reader")
-	go wsReader(conn)
+	log.Println("Wait a minute...")
+	tQ := time.Tick(time.Second)
 
-	log.Println("ws Upgrader starting writer")
-	wsWriter(conn)
+	go func() {
+		running := true
+		for running {
 
-	log.Println("ws Upgrader leaving")
-}
+			select {
+			case now := <-tQ:
+				t := NewTimeMsg(now)
+				log.Printf("Sending time %q", t)
 
-// =============== Websocket Reader =====================================
-func wsReader(conn *websocket.Conn) {
+				err = wsjson.Write(r.Context(), c, t)
+				if err != nil {
+					log.Println("ERROR: ", err)
+					running = false
+				}
+				tf := KeyVal{ K: "tempf", V: 88 }
+				sl := KeyVal{ K: "soil", V: .49 }
+				lt := KeyVal{ K: "light", V: .62 }
+				hu := KeyVal{ K: "humid", V: .12 }
+				err = wsjson.Write(r.Context(), c, tf)
+				err = wsjson.Write(r.Context(), c, sl)
+				err = wsjson.Write(r.Context(), c, lt)
+				err = wsjson.Write(r.Context(), c, hu)
+			}
+		}
+	}()
+
 	for {
-		var err error
-		var tlv TLV
-
-		tlv.tlv = make([]byte, 256)
-		if err = conn.ReadJSON(&tlv); err != nil {
-			log.Println("ERROR: ", err.Error(), " reading json msg")
+		data := make([]byte, 8192)
+		_, data, err := c.Read(r.Context())
+		if websocket.CloseStatus(err) == websocket.StatusNormalClosure {
+			log.Println("ws Closed")
 			return
 		}
-
-		log.Println("TLV: ", tlv.Str(), " ws incoming")
-
-		switch tlv.Type() {
-		//case "ai":
-		// if msg.V == "on" {
-		// 	video.VideoPipeline, err = GetPipeline(config.Pipeline)
-		// 	if err != nil {
-		// 		log.Error().
-		// 			Str("error", err.Error()).
-		// 			Str("pipeline", config.Pipeline).
-		// 			Msg("failed to get pipeline")
-		// 	}
-		// } else if msg.V == "off" {
-		// 	video.VideoPipeline = nil
-		// }
-
-		//case "video":
-		// if msg.V == "on" || msg.V == "start" {
-		// 	go video.StartVideo()
-		// } else if msg.V == "off" || msg.V == "stop" {
-		// 	go video.StopVideo()
-		// }
-		default:
-			log.Printf("wsReader recieved TLV %+v\n", tlv)
+		if err != nil {
+			log.Println("ERROR: reading websocket ", err)
+			return
 		}
+		log.Printf("incoming: %s", string(data))
 	}
+
 }
 
-// =============== Websocket Writer =====================================
-func wsWriter(conn *websocket.Conn) {
-	for {
-		select {}
+func echo(ctx context.Context, c *websocket.Conn) error {
+	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
+	defer cancel()
+
+	typ, r, err := c.Reader(ctx)
+	if err != nil {
+		return err
 	}
+
+	w, err := c.Writer(ctx, typ)
+	if err != nil {
+		return err
+	}
+
+	_, err = io.Copy(w, r)
+	if err != nil {
+		return fmt.Errorf("failed to io.Copy: %w", err)
+	}
+
+	err = w.Close()
+	return err
 }

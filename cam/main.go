@@ -58,6 +58,8 @@ func main() {
 
 	log.Println("Running the main event loop")
 	log.Printf("Subscribers: %+v\n", msg.Subscriptions)
+
+	log.Println("Sending Play command to video Q")
 	vidQ <- redeye.NewTLV(redeye.CMDPlay, 2)
 	for true {
 

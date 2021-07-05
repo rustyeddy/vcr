@@ -19,7 +19,7 @@ type Camera struct {
 }
 
 func NewCamera(name string) *Camera {
-	cam := &Camera{Name: name}
+	cam := &Camera{Name: name, Addrport: name}
 	cameras[name]  = cam
 	return cam;
 }

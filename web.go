@@ -13,25 +13,24 @@ type WebServer struct {
 }
 
 var (
-	web WebServer
+	web    WebServer
+	stream Stream
 
 	successResponse = map[string]string{"success": "true"}
 	errorResponse   = map[string]string{"success": "false"}
 )
 
-func GetWebServer(Addr, Path string) (web WebServer) {
-	web = WebServer{
+func GetWebServer(Addr, Path string) (web *WebServer) {
+	web = &WebServer{
 		Addr:     Addr,
 		Basepath: Path,
 		Handlers: nil,
 	}
 
-	//http.HandleFunc(Path+"/health", health)
 	web.RegisterHandlerFunc(Path+"/health", health)
 	web.RegisterHandlerFunc(Path+"/cameras", GetCameras)
-
-	// var stream Stream
-	// web.RegisterHandler("/redeye/mjpeg", stream)
+	web.RegisterHandler("/mjpeg", stream)
+	web.RegisterHandler("/ws", WSServer{})
 	return web
 }
 
