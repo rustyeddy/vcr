@@ -29,8 +29,8 @@ func GetWebServer(Addr, Path string) (web *WebServer) {
 
 	web.RegisterHandlerFunc(Path+"/health", health)
 	web.RegisterHandlerFunc(Path+"/cameras", GetCameras)
-	web.RegisterHandler("/mjpeg", stream)
 	web.RegisterHandler("/ws", WSServer{})
+	// web.RegisterHandler("/mjpeg", stream)
 	return web
 }
 

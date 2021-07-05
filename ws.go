@@ -21,6 +21,11 @@ type KeyVal struct {
 	V interface{}
 }
 
+type CamerasMsg struct {
+	Cameras map[string]*Camera
+	Action string
+}
+
 // ServeHTTP
 func (ws WSServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
@@ -54,6 +59,7 @@ func (ws WSServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					log.Println("ERROR: ", err)
 					running = false
 				}
+				/*
 				tf := KeyVal{ K: "tempf", V: 88 }
 				sl := KeyVal{ K: "soil", V: .49 }
 				lt := KeyVal{ K: "light", V: .62 }
@@ -62,6 +68,14 @@ func (ws WSServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				err = wsjson.Write(r.Context(), c, sl)
 				err = wsjson.Write(r.Context(), c, lt)
 				err = wsjson.Write(r.Context(), c, hu)
+				*/
+				msg := CamerasMsg{ cameras, "setCameras" }
+				err = wsjson.Write(r.Context(), c, msg)
+				if err != nil {
+					log.Println("ERROR writing cameras: ", err)
+					running = false
+				}
+
 			}
 		}
 	}()
