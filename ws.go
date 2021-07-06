@@ -22,7 +22,7 @@ type KeyVal struct {
 }
 
 type CamerasMsg struct {
-	Cameras map[string]*Camera
+	Cameras []*Camera
 	Action string
 }
 
@@ -60,7 +60,7 @@ func (ws WSServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					running = false
 				}
 
-				msg := CamerasMsg{ cameras, "setCameras" }
+				msg := CamerasMsg{ GetCameraList(), "setCameras" }
 				err = wsjson.Write(r.Context(), c, msg)
 				if err != nil {
 					log.Println("ERROR writing cameras: ", err)
