@@ -22,7 +22,7 @@ var (
 
 func init() {
 	config.Configuration = &redeye.Config
-	flag.StringVar(&config.Addr, "addr", ":8000", "Address to serve up redeye from")
+	flag.StringVar(&config.Addr, "addr", "0.0.0.0:8000", "Address to serve up redeye from")
 	flag.StringVar(&config.Broker, "broker", "tcp://10.24.10.10:1883", "MQTT Broker")
 	flag.StringVar(&config.BasePath, "basepath", "redeye", "BasePath for MQTT Topics and REST URL")
 	flag.StringVar(&config.ID, "id", "", "Set the ID for this node")

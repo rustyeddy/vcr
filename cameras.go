@@ -14,12 +14,13 @@ func init() {
 }
 
 type Camera struct {
-	Name string
-	Addrport string
+	Name string `json:"name"`
+	Addr string `json:"addr"`
+	Port int	`json:"port"`
 }
 
 func NewCamera(name string) *Camera {
-	cam := &Camera{Name: name, Addrport: name}
+	cam := &Camera{Name: name, Addr: name, Port: 8080}
 	cameras[name]  = cam
 	return cam;
 }

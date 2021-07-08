@@ -22,8 +22,8 @@ type KeyVal struct {
 }
 
 type CamerasMsg struct {
-	Cameras []*Camera
-	Action string
+	Cameras []*Camera			`json:"cameras"`
+	Action string `json:"action"`
 }
 
 // ServeHTTP
